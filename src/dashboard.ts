@@ -1,0 +1,32 @@
+import {
+  buildStatusContent,
+  type DashboardOptions,
+} from './dashboard-status-content.js';
+import {
+  purgeDashboardChannel,
+  startUnifiedDashboard,
+} from './unified-dashboard.js';
+
+export { buildStatusContent, purgeDashboardChannel };
+export type { DashboardOptions };
+
+export async function startStatusDashboard(
+  opts: DashboardOptions,
+): Promise<void> {
+  await startUnifiedDashboard({
+    assistantName: opts.assistantName,
+    serviceId: opts.assistantName.toLowerCase(),
+    serviceAgentType: opts.serviceAgentType || 'claude-code',
+    serviceRole: 'dashboard',
+    statusChannelId: opts.statusChannelId,
+    statusUpdateInterval: opts.statusUpdateInterval,
+    usageUpdateInterval: opts.usageUpdateInterval,
+    channels: opts.channels,
+    queue: opts.queue,
+    registeredGroups: opts.registeredGroups,
+  });
+}
+
+export async function startUsageDashboard(): Promise<void> {
+  // Usage dashboard is integrated into startStatusDashboard via unified dashboard.
+}
