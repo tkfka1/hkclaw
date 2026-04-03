@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+  describeHostSupport,
   getPlatform,
   isWSL,
   isRoot,
@@ -17,7 +18,7 @@ import {
 describe('getPlatform', () => {
   it('returns a valid platform string', () => {
     const result = getPlatform();
-    expect(['macos', 'linux', 'unknown']).toContain(result);
+    expect(['macos', 'linux', 'windows', 'unknown']).toContain(result);
   });
 });
 
@@ -81,9 +82,75 @@ describe('getServiceManager', () => {
     const result = getServiceManager();
     if (platform === 'macos') {
       expect(result).toBe('launchd');
+    } else if (platform === 'windows') {
+      expect(result).toBe('none');
     } else {
       expect(['systemd', 'none']).toContain(result);
     }
+  });
+});
+
+describe('describeHostSupport', () => {
+  it('marks Windows native as unsupported', () => {
+    expect(
+      describeHostSupport({
+        platform: 'windows',
+        isWSL: false,
+        serviceManager: 'none',
+      }),
+    ).toMatchObject({
+      level: 'unsupported',
+      label: 'Windows native',
+    });
+  });
+
+  it('marks macOS as supported with launchd', () => {
+    expect(
+      describeHostSupport({
+        platform: 'macos',
+        isWSL: false,
+        serviceManager: 'launchd',
+      }),
+    ).toMatchObject({
+      level: 'supported',
+      label: 'macOS',
+    });
+  });
+
+  it('marks Linux with systemd as first-class', () => {
+    expect(
+      describeHostSupport({
+        platform: 'linux',
+        isWSL: false,
+        serviceManager: 'systemd',
+      }),
+    ).toMatchObject({
+      level: 'first_class',
+      label: 'Linux with systemd',
+    });
+  });
+
+  it('marks WSL without systemd as supported via nohup fallback', () => {
+    const profile = describeHostSupport({
+      platform: 'linux',
+      isWSL: true,
+      serviceManager: 'none',
+    });
+    expect(profile.level).toBe('supported');
+    expect(profile.setupFlow).toContain('nohup');
+  });
+
+  it('marks Linux without systemd as limited', () => {
+    expect(
+      describeHostSupport({
+        platform: 'linux',
+        isWSL: false,
+        serviceManager: 'none',
+      }),
+    ).toMatchObject({
+      level: 'limited',
+      label: 'Linux without systemd',
+    });
   });
 });
 

@@ -1,0 +1,72 @@
+replicaCount: 1
+
+image:
+  repository: hkclaw
+  tag: local
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 4622
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: hkclaw.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+persistence:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 20Gi
+  storageClassName: ""
+  existingClaim: ""
+
+admin:
+  existingSecret: ""
+  usernameKey: username
+  passwordKey: password
+  username: ""
+  password: ""
+
+serviceEnv:
+  path: /workspace/service.env
+  existingSecret: ""
+  secretKey: service.env
+  bootstrapContents: ""
+  overwriteOnStart: false
+
+extraEnv: []
+extraEnvFrom: []

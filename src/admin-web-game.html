@@ -4,28 +4,39 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Office Admin</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap');
-
       :root {
         --bg-1: #08131a;
         --bg-2: #10222d;
+        --bg-3: #183343;
         --panel: rgba(8, 17, 23, 0.88);
         --panel-2: rgba(12, 24, 32, 0.94);
         --line: rgba(255, 255, 255, 0.09);
         --line-strong: rgba(255, 255, 255, 0.16);
         --text: #f6efdf;
         --muted: #93aab0;
+        --muted-strong: #bfd0d6;
         --gold: #ffbf69;
         --mint: #57d1b7;
         --blue: #7db5ff;
         --red: #ff8d7b;
         --purple: #b894ff;
-        --pixel: 'Silkscreen', 'IBM Plex Mono', monospace;
-        --sans: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', sans-serif;
+        --sunrise: #ffd7a6;
+        --pixel:
+          ui-monospace, 'SFMono-Regular', 'SF Mono', 'Cascadia Mono',
+          'Segoe UI Mono', 'Roboto Mono', Consolas, monospace;
+        --sans:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic',
+          'Noto Sans CJK KR', sans-serif;
         --service-sans:
-          'Noto Sans KR', 'Noto Sans', 'Apple SD Gothic Neo', sans-serif;
-        --mono: 'IBM Plex Mono', monospace;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic',
+          'Noto Sans CJK KR', sans-serif;
+        --mono:
+          ui-monospace, 'SFMono-Regular', 'SF Mono', 'Cascadia Mono',
+          'Segoe UI Mono', 'Roboto Mono', Consolas, monospace;
         --shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
       }
 
@@ -37,11 +48,17 @@
       body {
         margin: 0;
         min-height: 100%;
+        position: relative;
         background:
           radial-gradient(
             circle at top,
             rgba(87, 209, 183, 0.14),
-            transparent 28%
+            transparent 26%
+          ),
+          radial-gradient(
+            circle at 82% 12%,
+            rgba(255, 191, 105, 0.14),
+            transparent 24%
           ),
           linear-gradient(180deg, #142430 0%, #0d1a21 38%, #071017 100%);
         color: var(--text);
@@ -50,6 +67,32 @@
 
       body {
         overflow: hidden;
+      }
+
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        inset: auto;
+        width: 34vw;
+        height: 34vw;
+        border-radius: 999px;
+        filter: blur(28px);
+        opacity: 0.18;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      body::before {
+        top: -10vw;
+        left: -8vw;
+        background: radial-gradient(circle, rgba(87, 209, 183, 0.72), transparent 66%);
+      }
+
+      body::after {
+        right: -10vw;
+        bottom: -12vw;
+        background: radial-gradient(circle, rgba(255, 191, 105, 0.72), transparent 66%);
       }
 
       button,
@@ -64,11 +107,13 @@
       }
 
       .app {
+        position: relative;
         display: grid;
         grid-template-columns: minmax(0, 1fr) 420px;
         width: 100vw;
         height: 100vh;
         gap: 0;
+        z-index: 1;
       }
 
       .sidebar {
@@ -553,8 +598,15 @@
 
       .stage-wrap {
         position: relative;
+        display: flex;
+        flex-direction: column;
         min-width: 0;
-        padding: 14px;
+        min-height: 0;
+        height: 100vh;
+        padding: 18px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-gutter: stable;
       }
 
       .detail-panel {
@@ -572,11 +624,12 @@
         flex-direction: column;
         min-height: 0;
         height: 100%;
-        padding: 14px 14px 10px;
-        border-radius: 22px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 16px 16px 12px;
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%),
+          radial-gradient(circle at top right, rgba(125, 181, 255, 0.08), transparent 28%),
           var(--panel-2);
         box-shadow: var(--shadow);
         overflow: hidden;
@@ -619,7 +672,8 @@
       .detail-header {
         display: grid;
         gap: 6px;
-        padding: 2px 2px 0;
+        padding: 4px 2px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
       }
 
       .detail-kicker {
@@ -774,47 +828,1016 @@
       }
 
       .stage-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 14px 16px;
-        border-radius: 22px;
+        position: relative;
+        display: block;
+        padding: 18px 20px;
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background:
+          radial-gradient(circle at top left, rgba(87, 209, 183, 0.14), transparent 34%),
+          linear-gradient(135deg, rgba(255, 191, 105, 0.08), transparent 54%),
+          rgba(7, 14, 18, 0.84);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        z-index: 3;
+      }
+
+      .stage-header::after {
+        content: '';
+        position: absolute;
+        inset: auto -10% -55% auto;
+        width: 320px;
+        height: 320px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(125, 181, 255, 0.16), transparent 64%);
+        pointer-events: none;
+      }
+
+      .stage-overview {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+        gap: 14px;
+        margin-top: 12px;
+        z-index: 3;
+      }
+
+      .overview-card {
+        min-width: 0;
+        padding: 18px 20px;
+        border-radius: 24px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background:
-          linear-gradient(135deg, rgba(87, 209, 183, 0.1), transparent 42%),
-          rgba(7, 14, 18, 0.84);
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%),
+          radial-gradient(circle at top right, rgba(255, 191, 105, 0.1), transparent 24%),
+          rgba(8, 17, 23, 0.84);
         box-shadow: var(--shadow);
       }
 
-      .stage-header-left {
+      .overview-kicker {
+        color: var(--muted);
+        font: 600 11px/1.2 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .overview-title {
+        margin-top: 8px;
+        font: 700 26px/1.02 var(--service-sans);
+        letter-spacing: -0.04em;
+      }
+
+      .overview-copy {
+        margin-top: 8px;
+        color: var(--muted);
+        font: 400 14px/1.6 var(--service-sans);
+      }
+
+      .overview-ribbon {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .overview-ribbon-card {
+        padding: 12px 13px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .overview-ribbon-label {
+        color: var(--muted);
+        font: 600 10px/1.2 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .overview-ribbon-value {
+        margin-top: 8px;
+        color: var(--muted-strong);
+        font: 700 15px/1.2 var(--service-sans);
+      }
+
+      .overview-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .overview-stat {
+        position: relative;
+        overflow: hidden;
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 55%),
+          rgba(255, 255, 255, 0.04);
+      }
+
+      .overview-stat::after {
+        content: '';
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 12px;
+        height: 3px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .overview-stat.running::after {
+        background: linear-gradient(90deg, rgba(87, 209, 183, 0.28), rgba(87, 209, 183, 0.9));
+      }
+
+      .overview-stat.working::after {
+        background: linear-gradient(90deg, rgba(255, 191, 105, 0.28), rgba(255, 191, 105, 0.9));
+      }
+
+      .overview-stat.monitoring::after {
+        background: linear-gradient(90deg, rgba(125, 181, 255, 0.28), rgba(125, 181, 255, 0.9));
+      }
+
+      .overview-stat.teams::after {
+        background: linear-gradient(90deg, rgba(184, 148, 255, 0.28), rgba(184, 148, 255, 0.9));
+      }
+
+      .overview-stat-label {
+        color: var(--muted);
+        font: 600 11px/1.2 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .overview-stat-value {
+        margin-top: 10px;
+        font: 700 26px/1 var(--service-sans);
+        letter-spacing: -0.04em;
+      }
+
+      .overview-stat-copy {
+        margin-top: 8px;
+        padding-bottom: 12px;
+        color: var(--muted);
+        font: 400 12px/1.45 var(--service-sans);
+      }
+
+      .overview-actions {
         display: flex;
-        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .party-board {
+        display: grid;
+        gap: 14px;
+      }
+
+      .party-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 12px;
+      }
+
+      .party-head-copy {
         min-width: 0;
       }
 
+      .party-head-copy h2,
+      .rpg-panel-head h2 {
+        margin: 8px 0 0;
+        font: 700 22px/1.04 var(--pixel);
+        letter-spacing: -0.04em;
+      }
+
+      .party-head-copy p,
+      .rpg-panel-head p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .party-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted-strong);
+        font: 700 11px/1.2 var(--mono);
+      }
+
+      .party-focus {
+        display: grid;
+        grid-template-columns: 132px minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(140deg, rgba(255, 255, 255, 0.05), transparent 60%),
+          radial-gradient(circle at top right, rgba(255, 191, 105, 0.12), transparent 30%),
+          rgba(7, 14, 18, 0.9);
+      }
+
+      .hero-portrait {
+        --hero-accent: var(--gold);
+        --hero-accent-soft: var(--mint);
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          radial-gradient(circle at top, color-mix(in srgb, var(--hero-accent-soft) 40%, transparent), transparent 42%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 34%),
+          rgba(7, 15, 20, 0.96);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.06),
+          0 16px 28px rgba(0, 0, 0, 0.26);
+      }
+
+      .hero-portrait.large {
+        width: 132px;
+        min-height: 162px;
+      }
+
+      .hero-portrait.small {
+        width: 72px;
+        min-height: 92px;
+        border-radius: 18px;
+      }
+
+      .hero-portrait.micro {
+        width: 52px;
+        min-height: 64px;
+        border-radius: 14px;
+      }
+
+      .hero-portrait::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: 14px;
+        width: 64%;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.28);
+        transform: translateX(-50%);
+        filter: blur(3px);
+      }
+
+      .hero-portrait.micro::before {
+        bottom: 8px;
+        height: 6px;
+      }
+
+      .hero-figure {
+        position: absolute;
+        left: 50%;
+        bottom: 16px;
+        width: 70%;
+        height: 78%;
+        transform: translateX(-50%);
+      }
+
+      .hero-portrait.micro .hero-figure {
+        bottom: 10px;
+      }
+
+      .hero-cloak {
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        width: 76%;
+        height: 52%;
+        border-radius: 36px 36px 14px 14px;
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--hero-accent) 78%, #fbf2df), color-mix(in srgb, var(--hero-accent) 32%, #18242f));
+        transform: translateX(-50%);
+      }
+
+      .hero-body {
+        position: absolute;
+        left: 50%;
+        bottom: 23%;
+        width: 42%;
+        height: 30%;
+        border-radius: 16px 16px 12px 12px;
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--hero-accent-soft) 50%, #fbf2df), color-mix(in srgb, var(--hero-accent) 42%, #18242f));
+        transform: translateX(-50%);
+        box-shadow: 0 0 0 3px rgba(10, 18, 24, 0.3);
+      }
+
+      .hero-arm {
+        position: absolute;
+        bottom: 31%;
+        width: 12%;
+        height: 23%;
+        border-radius: 999px;
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--hero-accent) 50%, #f2d1b0), color-mix(in srgb, var(--hero-accent) 28%, #17222b));
+      }
+
+      .hero-arm.left {
+        left: 19%;
+        transform: rotate(14deg);
+      }
+
+      .hero-arm.right {
+        right: 19%;
+        transform: rotate(-14deg);
+      }
+
+      .hero-head {
+        position: absolute;
+        left: 50%;
+        bottom: 48%;
+        width: 34%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: linear-gradient(180deg, #f6d6b4, #ddb38f);
+        transform: translateX(-50%);
+        box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.08);
+      }
+
+      .hero-hair {
+        position: absolute;
+        left: 50%;
+        bottom: 62%;
+        width: 39%;
+        height: 15%;
+        border-radius: 18px 18px 12px 12px;
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--hero-accent-soft) 50%, #10191f), #10191f);
+        transform: translateX(-50%);
+      }
+
+      .hero-rank {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        min-width: 30px;
+        height: 30px;
+        padding: 0 8px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(7, 14, 18, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--hero-accent);
+        font: 700 11px/1 var(--pixel);
+        z-index: 1;
+      }
+
+      .hero-portrait.micro .hero-rank {
+        top: 6px;
+        right: 6px;
+        min-width: 22px;
+        height: 22px;
+        font-size: 9px;
+      }
+
+      .party-focus-copy {
+        min-width: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .party-focus-kicker {
+        color: var(--gold);
+        font: 700 11px/1.2 var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .party-focus-title {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .party-focus-title h3 {
+        margin: 0;
+        font: 700 28px/1 var(--service-sans);
+        letter-spacing: -0.05em;
+      }
+
+      .party-focus-role {
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--muted-strong);
+        font: 700 11px/1.2 var(--mono);
+      }
+
+      .party-focus-copy p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .hero-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .hero-stat-card {
+        padding: 10px 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .hero-stat-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: baseline;
+        color: var(--muted);
+        font: 600 10px/1.2 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .hero-stat-top strong {
+        color: var(--text);
+        font: 700 13px/1.2 var(--service-sans);
+        letter-spacing: 0;
+      }
+
+      .hero-meter {
+        position: relative;
+        height: 8px;
+        margin-top: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+
+      .hero-meter span {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: inherit;
+        background:
+          linear-gradient(90deg, color-mix(in srgb, var(--hero-accent) 34%, #ffffff), var(--hero-accent));
+      }
+
+      .hero-tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .hero-tag {
+        padding: 6px 9px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted-strong);
+        font: 700 10px/1.2 var(--mono);
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .hero-actions .small,
+      .mission-action {
+        padding: 8px 10px;
+        border-radius: 999px;
+        font: 700 10px/1.2 var(--mono);
+      }
+
+      .party-section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted-strong);
+        font: 700 11px/1.2 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .party-controls {
+        display: inline-flex;
+        gap: 8px;
+      }
+
+      .party-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .party-member-card,
+      .reserve-card,
+      .mission-card,
+      .system-card,
+      .chronicle-item,
+      .relic-card {
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 38%),
+          rgba(8, 17, 23, 0.88);
+      }
+
+      .party-member-card {
+        --hero-accent: var(--gold);
+        --hero-accent-soft: var(--mint);
+        padding: 12px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .party-member-card.selected {
+        border-color: color-mix(in srgb, var(--hero-accent) 44%, rgba(255, 255, 255, 0.08));
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--hero-accent) 24%, transparent);
+      }
+
+      .party-member-head {
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+      }
+
+      .hero-card-copy {
+        min-width: 0;
+        display: grid;
+        gap: 6px;
+      }
+
+      .hero-card-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .hero-card-name {
+        font: 700 16px/1.1 var(--service-sans);
+        letter-spacing: -0.03em;
+      }
+
+      .hero-card-slot {
+        color: var(--muted);
+        font: 700 10px/1.2 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .hero-card-class {
+        color: var(--muted-strong);
+        font: 700 11px/1.2 var(--mono);
+      }
+
+      .hero-card-subcopy {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .hero-card-stats {
+        display: grid;
+        gap: 8px;
+      }
+
+      .hero-card-stat {
+        display: grid;
+        gap: 6px;
+      }
+
+      .hero-card-stat-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--muted);
+        font: 600 10px/1.2 var(--mono);
+      }
+
+      .party-member-actions,
+      .reserve-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .party-member-actions button,
+      .reserve-actions button,
+      .party-controls button,
+      .hero-actions button {
+        flex: 1 1 auto;
+      }
+
+      .reserve-board {
+        display: grid;
+        gap: 10px;
+      }
+
+      .party-quick-stack {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .party-quick-block {
+        display: grid;
+        gap: 10px;
+      }
+
+      .party-quick-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .party-quick-card {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 42%),
+          rgba(8, 17, 23, 0.78);
+      }
+
+      .party-quick-name {
+        font: 700 13px/1.25 var(--service-sans);
+        letter-spacing: -0.01em;
+      }
+
+      .party-quick-meta {
+        color: var(--muted);
+        font: 600 10px/1.2 var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .reserve-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .reserve-card {
+        --hero-accent: var(--gold);
+        --hero-accent-soft: var(--mint);
+        padding: 10px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .reserve-head {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+      }
+
+      .reserve-copy {
+        min-width: 0;
+      }
+
+      .reserve-name {
+        font: 700 13px/1.2 var(--service-sans);
+      }
+
+      .reserve-class {
+        margin-top: 4px;
+        color: var(--muted);
+        font: 600 10px/1.3 var(--mono);
+      }
+
+      .reserve-copy p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .preset-board {
+        display: grid;
+        gap: 10px;
+      }
+
+      .preset-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .preset-card {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .preset-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: flex-start;
+      }
+
+      .preset-top h3 {
+        margin: 6px 0 0;
+        font: 700 15px/1.2 var(--service-sans);
+      }
+
+      .preset-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .preset-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--muted-strong);
+        font: 700 10px/1.2 var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .rpg-side-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .rpg-panel {
+        padding: 16px;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 34%),
+          rgba(8, 17, 23, 0.88);
+        box-shadow: var(--shadow);
+      }
+
+      .rpg-panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .mission-list,
+      .system-list,
+      .chronicle-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .relic-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .relic-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .mission-card {
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .mission-card.clear {
+        border-color: rgba(87, 209, 183, 0.22);
+      }
+
+      .mission-card.alert {
+        border-color: rgba(255, 141, 123, 0.24);
+      }
+
+      .mission-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .mission-tier {
+        color: var(--gold);
+        font: 700 10px/1.2 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .mission-top h3 {
+        margin: 6px 0 0;
+        font: 700 15px/1.25 var(--service-sans);
+      }
+
+      .mission-top .pill {
+        white-space: nowrap;
+      }
+
+      .mission-card p,
+      .system-card p,
+      .chronicle-item p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .mission-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted-strong);
+        font: 700 10px/1.2 var(--mono);
+      }
+
+      .system-card,
+      .chronicle-item,
+      .relic-card {
+        padding: 12px;
+      }
+
+      .system-card-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: baseline;
+      }
+
+      .system-card-top strong {
+        font: 700 18px/1 var(--service-sans);
+      }
+
+      .system-card-top span {
+        color: var(--muted);
+        font: 600 10px/1.2 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .chronicle-item {
+        display: grid;
+        gap: 6px;
+      }
+
+      .chronicle-label {
+        color: var(--muted-strong);
+        font: 700 10px/1.2 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .relic-card {
+        display: grid;
+        gap: 10px;
+      }
+
+      .relic-card.equipped {
+        border-color: rgba(255, 191, 105, 0.28);
+        box-shadow: 0 0 0 1px rgba(255, 191, 105, 0.12);
+      }
+
+      .relic-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--muted-strong);
+        font: 700 10px/1.2 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .relic-bonus-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .relic-bonus {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted-strong);
+        font: 700 10px/1 var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .raid-outcome {
+        margin-top: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.16);
+      }
+
+      .hotkey-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .hotkey-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted-strong);
+        font: 700 10px/1.2 var(--mono);
+      }
+
+      .hotkey-chip kbd {
+        min-width: 20px;
+        padding: 4px 6px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.18);
+        color: var(--text);
+        font: 700 10px/1 var(--mono);
+      }
+
+      .stage-header-left {
+        display: block;
+        min-width: 0;
+      }
+
+      .stage-header-copy {
+        min-width: 0;
+      }
+
+      .stage-kicker {
+        color: var(--gold);
+        font: 700 11px/1.2 var(--mono);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
       .stage-title {
-        font: 700 18px/1.2 var(--pixel);
+        margin-top: 10px;
+        font: 700 clamp(26px, 3vw, 38px)/0.98 var(--service-sans);
+        letter-spacing: -0.06em;
       }
 
       .stage-copy {
-        margin-top: 6px;
+        margin-top: 10px;
         color: var(--muted);
-        font-size: 13px;
+        max-width: 56ch;
+        font-size: 14px;
+        line-height: 1.6;
       }
 
       .stage-header-right {
         display: flex;
         flex-wrap: wrap;
+        align-items: flex-start;
+        align-content: flex-start;
         gap: 8px;
         justify-content: flex-end;
+        margin-top: 16px;
+        width: 100%;
+        min-width: 0;
       }
 
       .hud-chip {
         padding: 8px 10px;
         border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
         background: rgba(255, 255, 255, 0.06);
-        color: var(--muted);
+        color: var(--muted-strong);
         font: 600 11px/1.2 var(--mono);
       }
 
@@ -838,10 +1861,11 @@
       .office {
         position: relative;
         width: 100%;
-        height: calc(100vh - 116px);
+        flex: 1 1 auto;
+        min-height: 360px;
         margin-top: 16px;
         overflow: hidden;
-        border-radius: 30px;
+        border-radius: 34px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background:
           radial-gradient(
@@ -851,6 +1875,7 @@
           ),
           linear-gradient(180deg, #172b38 0%, #13222c 40%, #101922 100%);
         box-shadow: var(--shadow);
+        z-index: 1;
       }
 
       .office canvas {
@@ -1277,6 +2302,37 @@
           grid-template-columns: minmax(0, 1fr) 380px;
         }
 
+        .stage-header {
+          display: block;
+        }
+
+        .stage-header-right {
+          justify-content: flex-start;
+          min-width: 0;
+          width: 100%;
+        }
+
+        .stage-overview {
+          grid-template-columns: 1fr;
+        }
+
+        .party-focus {
+          grid-template-columns: 1fr;
+        }
+
+        .party-grid,
+        .reserve-grid,
+        .party-quick-grid,
+        .preset-grid,
+        .relic-summary,
+        .relic-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .overview-ribbon {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
         .service-log-grid {
           grid-template-columns: 1fr;
         }
@@ -1293,8 +2349,38 @@
           min-height: 100vh;
         }
 
+        .stage-wrap {
+          height: auto;
+          padding: 14px;
+        }
+
         .office {
           height: 72vh;
+        }
+
+        .stage-header {
+          padding: 16px;
+          border-radius: 24px;
+        }
+
+        .overview-card {
+          padding: 16px;
+        }
+
+        .overview-ribbon,
+        .overview-stats {
+          grid-template-columns: 1fr;
+        }
+
+        .preset-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .party-head,
+        .rpg-panel-head,
+        .mission-footer {
+          flex-direction: column;
+          align-items: flex-start;
         }
 
         .detail-panel {
@@ -1322,6 +2408,28 @@
           grid-template-columns: 1fr;
         }
       }
+
+      @media (max-width: 640px) {
+        .stage-title {
+          font-size: 28px;
+        }
+
+        .stage-copy {
+          font-size: 13px;
+        }
+
+        .overview-title {
+          font-size: 24px;
+        }
+
+        .overview-stat-value {
+          font-size: 24px;
+        }
+
+        .party-focus-title h3 {
+          font-size: 24px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1329,13 +2437,15 @@
       <main class="stage-wrap">
         <div class="stage-header">
           <div class="stage-header-left">
-            <div>
+            <div class="stage-header-copy">
+              <div class="stage-kicker" id="stage-kicker">HKClaw Control Center</div>
               <div class="stage-title" id="stage-title"></div>
               <div class="stage-copy" id="stage-copy"></div>
             </div>
           </div>
           <div class="stage-header-right" id="header-hud"></div>
         </div>
+        <div class="stage-overview" id="stage-overview"></div>
         <div class="office" id="office"></div>
       </main>
 
@@ -1358,8 +2468,15 @@
         selectedServiceId: null,
         selectedTemperamentId: null,
         selectedRoomId: null,
+        cameraMode: 'focus',
+        cameraTargetKey: '',
         selectedTeamChatServiceId: null,
         selectedLayoutTargetKey: null,
+        employeeFilterQuery: '',
+        heroPartyServiceIds: [],
+        heroPartyPresets: createDefaultPartyPresets(),
+        heroCustomizations: {},
+        campaignState: createDefaultCampaignState(),
         chatHistory: [],
         chatLoading: false,
         messageSending: false,
@@ -1396,10 +2513,266 @@
         Math.ceil((window.devicePixelRatio || 1) * 2),
         3,
       );
+      const PARTY_LIMIT = 4;
+      const UI_PREFS_STORAGE_KEY = 'hkclaw-office-rpg-ui-v1';
+
+      function createDefaultPartyPresets() {
+        return [
+          { slotId: 'alpha', name: 'Alpha Memory', serviceIds: [] },
+          { slotId: 'bravo', name: 'Bravo Memory', serviceIds: [] },
+          { slotId: 'crescent', name: 'Crescent Memory', serviceIds: [] },
+        ];
+      }
+
+      function createDefaultRelicLoadouts() {
+        return [
+          {
+            slotId: 'assault',
+            name: 'Assault Memory',
+            relicIds: [],
+            savedAt: '',
+          },
+          {
+            slotId: 'signal',
+            name: 'Signal Memory',
+            relicIds: [],
+            savedAt: '',
+          },
+          {
+            slotId: 'standby',
+            name: 'Standby Memory',
+            relicIds: [],
+            savedAt: '',
+          },
+        ];
+      }
+
+      function normalizePartyPresets(input) {
+        return createDefaultPartyPresets().map((preset, index) => {
+          const entry = Array.isArray(input) ? input[index] : null;
+          return {
+            slotId: preset.slotId,
+            name:
+              entry && typeof entry.name === 'string' && entry.name.trim()
+                ? entry.name.trim().slice(0, 32)
+                : preset.name,
+            serviceIds: Array.isArray(entry?.serviceIds)
+              ? uniqueIds(entry.serviceIds.map((value) => String(value || ''))).slice(
+                  0,
+                  PARTY_LIMIT,
+                )
+              : [],
+          };
+        });
+      }
+
+      function normalizeRelicLoadouts(input, ownedRelicInventory = []) {
+        const owned = new Set(ownedRelicInventory);
+        return createDefaultRelicLoadouts().map((loadout, index) => {
+          const entry = Array.isArray(input) ? input[index] : null;
+          return {
+            slotId: loadout.slotId,
+            name:
+              entry && typeof entry.name === 'string' && entry.name.trim()
+                ? entry.name.trim().slice(0, 32)
+                : loadout.name,
+            relicIds: Array.isArray(entry?.relicIds)
+              ? uniqueIds(
+                  entry.relicIds
+                    .map((value) => String(value || '').trim())
+                    .filter((value) => owned.has(value)),
+                ).slice(0, RELIC_EQUIP_LIMIT)
+              : [],
+            savedAt: String(entry?.savedAt || '').trim(),
+          };
+        });
+      }
+
+      function createDefaultCampaignState() {
+        return {
+          moraleBonus: 0,
+          syncBonus: 0,
+          threatDelta: 0,
+          guildBonus: 0,
+          completedObjectiveIds: [],
+          activeObjectiveId: '',
+          journal: [],
+          relicInventory: [],
+          equippedRelicIds: [],
+          relicLoadouts: createDefaultRelicLoadouts(),
+          raid: {
+            activeEncounterId: '',
+            bossHp: 0,
+            bossMaxHp: 0,
+            victories: 0,
+            relicCharge: 0,
+            pendingReward: '',
+            lastOutcome: '',
+            lastBossTitle: '',
+          },
+        };
+      }
+
+      function normalizeCampaignState(input) {
+        const defaults = createDefaultCampaignState();
+        const source = input && typeof input === 'object' ? input : {};
+        const normalizedRelicInventory = Array.isArray(source.relicInventory)
+          ? uniqueIds(
+              source.relicInventory
+                .map((value) => String(value || '').trim())
+                .filter((value) => RAID_RELIC_IDS.has(value)),
+            ).slice(0, RAID_RELIC_DEFS.length)
+          : [];
+        const normalizedEquippedRelicIds = Array.isArray(source.equippedRelicIds)
+          ? uniqueIds(
+              source.equippedRelicIds
+                .map((value) => String(value || '').trim())
+                .filter((value) => normalizedRelicInventory.includes(value)),
+            ).slice(0, RELIC_EQUIP_LIMIT)
+          : [];
+        const normalizedRelicLoadouts = normalizeRelicLoadouts(
+          source.relicLoadouts,
+          normalizedRelicInventory,
+        );
+        return {
+          moraleBonus: Number(source.moraleBonus) || 0,
+          syncBonus: Number(source.syncBonus) || 0,
+          threatDelta: Number(source.threatDelta) || 0,
+          guildBonus: Number(source.guildBonus) || 0,
+          completedObjectiveIds: Array.isArray(source.completedObjectiveIds)
+            ? source.completedObjectiveIds
+                .map((value) => String(value || '').trim())
+                .filter(Boolean)
+                .slice(0, 20)
+            : [],
+          activeObjectiveId: String(source.activeObjectiveId || '').trim(),
+          journal: Array.isArray(source.journal)
+            ? source.journal
+                .map((entry) => ({
+                  label: String(entry.label || '').trim(),
+                  copy: String(entry.copy || '').trim(),
+                  at: String(entry.at || '').trim(),
+                }))
+                .filter((entry) => entry.label && entry.copy)
+                .slice(0, 12)
+            : [],
+          relicInventory: normalizedRelicInventory,
+          equippedRelicIds: normalizedEquippedRelicIds,
+          relicLoadouts: normalizedRelicLoadouts,
+          raid: {
+            ...defaults.raid,
+            ...(source.raid && typeof source.raid === 'object'
+              ? {
+                  activeEncounterId: String(
+                    source.raid.activeEncounterId || '',
+                  ).trim(),
+                  bossHp: Math.max(0, Number(source.raid.bossHp) || 0),
+                  bossMaxHp: Math.max(0, Number(source.raid.bossMaxHp) || 0),
+                  victories: Math.max(0, Number(source.raid.victories) || 0),
+                  relicCharge: Math.max(
+                    0,
+                    Number(source.raid.relicCharge) || 0,
+                  ),
+                  pendingReward: String(source.raid.pendingReward || '').trim(),
+                  lastOutcome: String(source.raid.lastOutcome || '').trim(),
+                  lastBossTitle: String(source.raid.lastBossTitle || '').trim(),
+                }
+              : {}),
+          },
+        };
+      }
 
       function clampNumber(value, min, max) {
         return Math.min(max, Math.max(min, value));
       }
+
+      function uniqueIds(values) {
+        const seen = new Set();
+        return values.filter((value) => {
+          const normalized = String(value || '').trim();
+          if (!normalized || seen.has(normalized)) {
+            return false;
+          }
+          seen.add(normalized);
+          return true;
+        });
+      }
+
+      function normalizeCameraMode(value) {
+        return value === 'overview' ? 'overview' : 'focus';
+      }
+
+      function normalizeCameraTargetKey(value) {
+        const raw = String(value || '').trim();
+        return /^(service|team|room):.+/.test(raw) ? raw : '';
+      }
+
+      function loadUiPrefs() {
+        try {
+          const raw = window.localStorage?.getItem(UI_PREFS_STORAGE_KEY);
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          ui.cameraMode = normalizeCameraMode(parsed?.cameraMode);
+          ui.cameraTargetKey = normalizeCameraTargetKey(parsed?.cameraTargetKey);
+          if (Array.isArray(parsed?.heroPartyServiceIds)) {
+            ui.heroPartyServiceIds = uniqueIds(
+              parsed.heroPartyServiceIds.map((value) => String(value || '')),
+            ).slice(0, PARTY_LIMIT);
+          }
+          if (Array.isArray(parsed?.heroPartyPresets)) {
+            ui.heroPartyPresets = normalizePartyPresets(parsed.heroPartyPresets);
+          }
+          if (parsed?.heroCustomizations && typeof parsed.heroCustomizations === 'object') {
+            ui.heroCustomizations = Object.fromEntries(
+              Object.entries(parsed.heroCustomizations)
+                .map(([serviceId, value]) => {
+                  if (!value || typeof value !== 'object') {
+                    return null;
+                  }
+                  return [
+                    String(serviceId || '').trim(),
+                    {
+                      alias: String(value.alias || '').trim(),
+                      title: String(value.title || '').trim(),
+                      formationRole: String(value.formationRole || '').trim(),
+                      theme: String(value.theme || '').trim(),
+                      motto: String(value.motto || '').trim(),
+                    },
+                  ];
+                })
+                .filter(Boolean),
+            );
+          }
+          if (parsed?.campaignState && typeof parsed.campaignState === 'object') {
+            ui.campaignState = normalizeCampaignState(parsed.campaignState);
+          }
+        } catch {
+          ui.cameraMode = 'focus';
+          ui.cameraTargetKey = '';
+          ui.heroPartyServiceIds = [];
+          ui.heroPartyPresets = createDefaultPartyPresets();
+          ui.heroCustomizations = {};
+          ui.campaignState = createDefaultCampaignState();
+        }
+      }
+
+      function persistUiPrefs() {
+        try {
+          window.localStorage?.setItem(
+            UI_PREFS_STORAGE_KEY,
+            JSON.stringify({
+              cameraMode: ui.cameraMode,
+              cameraTargetKey: ui.cameraTargetKey,
+              heroPartyServiceIds: ui.heroPartyServiceIds.slice(0, PARTY_LIMIT),
+              heroPartyPresets: ui.heroPartyPresets,
+              heroCustomizations: ui.heroCustomizations,
+              campaignState: ui.campaignState,
+            }),
+          );
+        } catch {}
+      }
+
+      loadUiPrefs();
 
       const TAB_DEFS = [
         { id: 'team-create', label: '팀 만들기', desk: 'management' },
@@ -1421,6 +2794,79 @@
         '#b894ff',
         '#f2d58b',
       ];
+
+      const RAID_ENCOUNTER_DEFS = [
+        {
+          id: 'archive-wyrm',
+          tier: 'Depth 01',
+          title: 'Archive Wyrm',
+          copy: '문서 창고를 삼키며 오래된 지식과 설정을 뒤엉키게 만드는 서고룡입니다.',
+          reward: 'Archive Relic',
+          baseHp: 260,
+          difficulty: 220,
+        },
+        {
+          id: 'latency-lich',
+          tier: 'Depth 02',
+          title: 'Latency Lich',
+          copy: '채널과 작업 큐를 느리게 오염시키는 고대 지연 군주입니다.',
+          reward: 'Sync Sigil',
+          baseHp: 340,
+          difficulty: 280,
+        },
+        {
+          id: 'deploy-hydra',
+          tier: 'Depth 03',
+          title: 'Deploy Hydra',
+          copy: '배포와 인프라를 동시에 뒤흔드는 다중 헤드 레이드 보스입니다.',
+          reward: 'Guild Banner',
+          baseHp: 440,
+          difficulty: 340,
+        },
+      ];
+
+      const RELIC_EQUIP_LIMIT = 2;
+
+      const RAID_RELIC_DEFS = [
+        {
+          id: 'archive-relic',
+          encounterId: 'archive-wyrm',
+          title: 'Archive Relic',
+          sourceTitle: 'Archive Wyrm',
+          copy: '문서 흐름을 압축해 전위 화력과 위협 제어를 동시에 끌어올립니다.',
+          power: 18,
+          morale: 0,
+          sync: 4,
+          threat: -2,
+          guild: 0,
+        },
+        {
+          id: 'sync-sigil',
+          encounterId: 'latency-lich',
+          title: 'Sync Sigil',
+          sourceTitle: 'Latency Lich',
+          copy: '오버클럭 안정도를 높여 파티 동기화와 사기 유지력을 강화합니다.',
+          power: 12,
+          morale: 2,
+          sync: 8,
+          threat: 0,
+          guild: 0,
+        },
+        {
+          id: 'guild-banner',
+          encounterId: 'deploy-hydra',
+          title: 'Guild Banner',
+          sourceTitle: 'Deploy Hydra',
+          copy: '길드 전열을 고정해 HQ 규모와 전투 집중도를 오래 유지시킵니다.',
+          power: 14,
+          morale: 6,
+          sync: 0,
+          threat: 0,
+          guild: 8,
+        },
+      ];
+
+      const RAID_RELIC_IDS = new Set(RAID_RELIC_DEFS.map((relic) => relic.id));
 
       function emptyDerivedState() {
         return {
@@ -1644,6 +3090,34 @@
         return ui.derived?.services || [];
       }
 
+      function matchesEmployeeFilter(service, query = ui.employeeFilterQuery) {
+        const normalizedQuery = String(query || '')
+          .trim()
+          .toLowerCase();
+        if (!normalizedQuery) return true;
+        const searchText = [
+          service.assistantName,
+          service.serviceId,
+          service.agentType,
+          service.role,
+          service.presence,
+          service.currentJid,
+          serviceTeams(service.serviceId)
+            .map((team) => team.name)
+            .join(' '),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return searchText.includes(normalizedQuery);
+      }
+
+      function filteredManageableServices() {
+        return manageableServices().filter((service) =>
+          matchesEmployeeFilter(service),
+        );
+      }
+
       function temperamentDefinitions() {
         return ui.derived?.temperaments || [];
       }
@@ -1827,6 +3301,12 @@
         return ui.derived?.nonDashboardServices || [];
       }
 
+      function filteredNonDashboardServices() {
+        return nonDashboardServices().filter((service) =>
+          matchesEmployeeFilter(service),
+        );
+      }
+
       function teamAssignableServices() {
         return nonDashboardServices();
       }
@@ -1853,6 +3333,82 @@
         return TAB_DEFS.filter((tab) => tab.desk === desk);
       }
 
+      function roomIdForDesk(desk) {
+        if (desk === 'management') return 'management';
+        if (desk === 'general') return 'general';
+        if (desk === 'hr') return 'hr';
+        if (desk === 'map') return 'ops';
+        return '';
+      }
+
+      function focusCameraOn(kind, id) {
+        const nextTargetKey = normalizeCameraTargetKey(
+          kind && id ? `${kind}:${id}` : '',
+        );
+        const changed =
+          ui.cameraMode !== 'focus' || ui.cameraTargetKey !== nextTargetKey;
+        ui.cameraMode = 'focus';
+        ui.cameraTargetKey = nextTargetKey;
+        if (changed) {
+          persistUiPrefs();
+        }
+      }
+
+      function setCameraMode(mode) {
+        const nextMode = normalizeCameraMode(mode);
+        if (ui.cameraMode !== nextMode) {
+          ui.cameraMode = nextMode;
+          persistUiPrefs();
+        }
+        render();
+      }
+
+      function jumpCameraTarget(kind, id) {
+        if (!kind || !id) return;
+
+        if (kind === 'service') {
+          selectHero(id);
+          return;
+        }
+
+        if (kind === 'team') {
+          const team = teamById(id);
+          if (!team) return;
+          ui.selectedTeamId = id;
+          ui.detailMode = 'team';
+          ui.selectedRoomId = null;
+          focusCameraOn('team', id);
+          const target = teamChatTarget(id);
+          if (target) {
+            if (ui.selectedTeamChatServiceId !== target.serviceId) {
+              ui.chatHistory = [];
+            }
+            ui.selectedTeamChatServiceId = target.serviceId;
+          } else {
+            ui.chatHistory = [];
+          }
+          render();
+          if (target) {
+            loadChatHistory(id);
+          }
+          return;
+        }
+
+        if (kind === 'room') {
+          if (id === 'management') {
+            openManagementDesk('team-management');
+            return;
+          }
+          if (id === 'hr') {
+            openHrDesk('employees');
+            return;
+          }
+          if (['general', 'lounge', 'offsite', 'ops'].includes(id)) {
+            selectOperationalRoom(id);
+          }
+        }
+      }
+
       function isTeamLayoutMode() {
         return (
           ui.detailMode === 'desk' &&
@@ -1867,6 +3423,7 @@
 
       function selectLayoutTarget(kind, id) {
         ui.selectedLayoutTargetKey = layoutTargetKey(kind, id);
+        focusCameraOn(kind, id);
         render();
       }
 
@@ -1916,6 +3473,1647 @@
         return agentType === 'codex'
           ? 'Codex · auth.json'
           : 'Claude Code · OAuth';
+      }
+
+      function presenceQuestLabel(presence) {
+        return (
+          {
+            offline: '휴식 중',
+            resting: '정비 중',
+            working: '원정 중',
+            monitoring: '경계 중',
+          }[presence] || presence
+        );
+      }
+
+      function hashText(value) {
+        let hash = 2166136261;
+        const input = String(value || '');
+        for (let index = 0; index < input.length; index += 1) {
+          hash ^= input.charCodeAt(index);
+          hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
+      }
+
+      function heroRosterServices() {
+        return ui.derived?.nonDashboardServices?.length
+          ? ui.derived.nonDashboardServices
+          : ui.derived?.services || [];
+      }
+
+      function partyServices() {
+        return uniqueIds(ui.heroPartyServiceIds)
+          .map((serviceId) => serviceById(serviceId))
+          .filter(Boolean);
+      }
+
+      function reserveServices() {
+        const activePartyIds = new Set(ui.heroPartyServiceIds);
+        return heroRosterServices().filter(
+          (service) => !activePartyIds.has(service.serviceId),
+        );
+      }
+
+      function selectedHeroService() {
+        return (
+          serviceById(ui.selectedServiceId) ||
+          partyServices()[0] ||
+          heroRosterServices()[0] ||
+          null
+        );
+      }
+
+      function selectedHeroProfile() {
+        const service = selectedHeroService();
+        return service ? buildHeroProfile(service) : null;
+      }
+
+      function partyPresets() {
+        return Array.isArray(ui.heroPartyPresets)
+          ? ui.heroPartyPresets
+          : createDefaultPartyPresets();
+      }
+
+      function relicLoadouts() {
+        return Array.isArray(ui.campaignState?.relicLoadouts)
+          ? ui.campaignState.relicLoadouts
+          : createDefaultRelicLoadouts();
+      }
+
+      function heroCustomizationFor(serviceId) {
+        return ui.heroCustomizations?.[serviceId] || {};
+      }
+
+      function defaultFormationRole(service) {
+        if (service.role === 'dashboard') return 'anchor';
+        if (service.agentType === 'codex') return 'scout';
+        if (service.presence === 'working') return 'vanguard';
+        return 'support';
+      }
+
+      function formationRoleLabel(role) {
+        return (
+          {
+            vanguard: '전위',
+            support: '지원',
+            scout: '정찰',
+            anchor: '앵커',
+          }[role] || '지원'
+        );
+      }
+
+      function campaignJournalEntries() {
+        return ui.campaignState?.journal || [];
+      }
+
+      function raidState() {
+        return ui.campaignState?.raid || createDefaultCampaignState().raid;
+      }
+
+      function relicDefById(relicId) {
+        return RAID_RELIC_DEFS.find((relic) => relic.id === relicId) || null;
+      }
+
+      function relicDefForEncounter(encounterId) {
+        return (
+          RAID_RELIC_DEFS.find((relic) => relic.encounterId === encounterId) ||
+          null
+        );
+      }
+
+      function ownedRelicIds() {
+        return uniqueIds(ui.campaignState?.relicInventory || []).filter(
+          (relicId) => RAID_RELIC_IDS.has(relicId),
+        );
+      }
+
+      function equippedRelicIds() {
+        const owned = new Set(ownedRelicIds());
+        return uniqueIds(ui.campaignState?.equippedRelicIds || [])
+          .filter((relicId) => owned.has(relicId))
+          .slice(0, RELIC_EQUIP_LIMIT);
+      }
+
+      function buildOwnedRelics() {
+        const equipped = new Set(equippedRelicIds());
+        return ownedRelicIds()
+          .map((relicId) => {
+            const relic = relicDefById(relicId);
+            return relic ? { ...relic, equipped: equipped.has(relicId) } : null;
+          })
+          .filter(Boolean);
+      }
+
+      function relicBonusesForIds(relicIds) {
+        return uniqueIds(relicIds)
+          .map((relicId) => relicDefById(relicId))
+          .filter(Boolean)
+          .reduce(
+            (totals, relic) => {
+              totals.power += relic.power || 0;
+              totals.morale += relic.morale || 0;
+              totals.sync += relic.sync || 0;
+              totals.threat += relic.threat || 0;
+              totals.guild += relic.guild || 0;
+              return totals;
+            },
+            {
+              power: 0,
+              morale: 0,
+              sync: 0,
+              threat: 0,
+              guild: 0,
+            },
+          );
+      }
+
+      function equippedRelicBonuses() {
+        return buildOwnedRelics().reduce(
+          (totals, relic) => {
+            if (!relic.equipped) return totals;
+            totals.power += relic.power || 0;
+            totals.morale += relic.morale || 0;
+            totals.sync += relic.sync || 0;
+            totals.threat += relic.threat || 0;
+            totals.guild += relic.guild || 0;
+            return totals;
+          },
+          {
+            power: 0,
+            morale: 0,
+            sync: 0,
+            threat: 0,
+            guild: 0,
+          },
+        );
+      }
+
+      function formatRelicBonuses(relic) {
+        return [
+          relic.power ? `power +${relic.power}` : '',
+          relic.sync ? `sync +${relic.sync}` : '',
+          relic.morale ? `morale +${relic.morale}` : '',
+          relic.guild ? `guild +${relic.guild}` : '',
+          relic.threat
+            ? `threat ${relic.threat > 0 ? '+' : ''}${relic.threat}`
+            : '',
+        ].filter(Boolean);
+      }
+
+      function formatRelicBonusSummary(relic) {
+        return formatRelicBonuses(relic).join(' · ') || 'no bonus';
+      }
+
+      function pushCampaignJournal(label, copy) {
+        ui.campaignState = {
+          ...ui.campaignState,
+          journal: [
+            {
+              label,
+              copy,
+              at: new Date().toISOString(),
+            },
+            ...campaignJournalEntries(),
+          ].slice(0, 12),
+        };
+      }
+
+      function heroActionLabel(actionId) {
+        return (
+          {
+            scout: '정찰',
+            brief: '브리핑',
+            fortify: '방어',
+            celebrate: '사기 충전',
+          }[actionId] || '행동'
+        );
+      }
+
+      function raidCommandLabel(command) {
+        return (
+          {
+            strike: '강타',
+            burst: '오버클럭',
+            guard: '수비 태세',
+            rally: '집결',
+          }[command] || '레이드'
+        );
+      }
+
+      function objectiveState() {
+        return ui.campaignState || {
+          completedObjectiveIds: [],
+          activeObjectiveId: '',
+        };
+      }
+
+      function partyCombatPower(profiles = partyServices().map((service) => buildHeroProfile(service))) {
+        if (!profiles.length) return 0;
+        const total = profiles.reduce(
+          (sum, profile) =>
+            sum +
+            profile.level * 5 +
+            profile.sync * 2 +
+            profile.focus +
+            profile.guard +
+            profile.speed,
+          0,
+        );
+        return Math.round(total / profiles.length + equippedRelicBonuses().power);
+      }
+
+      function buildHeroProfile(service) {
+        const hash = hashText(
+          `${service.serviceId}:${service.assistantName}:${service.agentType}:${service.role}`,
+        );
+        const customization = heroCustomizationFor(service.serviceId);
+        const teamNames = serviceTeams(service.serviceId)
+          .map((team) => team.name)
+          .filter(Boolean);
+        const palette = [
+          '#ffbf69',
+          '#57d1b7',
+          '#7db5ff',
+          '#ff8d7b',
+          '#b894ff',
+          '#f2d58b',
+        ];
+        const archetype =
+          service.role === 'dashboard'
+            ? {
+                className: '전술 오라클',
+                stance: '상황실에서 지휘와 감시 루틴을 관리합니다.',
+              }
+            : service.agentType === 'codex'
+              ? service.presence === 'working'
+                ? {
+                    className: '룬 엔지니어',
+                    stance: '코드와 도면을 뜯어고치며 돌파구를 만듭니다.',
+                  }
+                : {
+                    className: '회로 스카우트',
+                    stance: '탐색과 빠른 조사를 맡는 테크 정찰병입니다.',
+                  }
+              : service.presence === 'working'
+                ? {
+                    className: '대화 기사',
+                    stance: '채널과 사용자를 직접 상대하는 현장형 운영자입니다.',
+                  }
+                : {
+                    className: '기록 연금술사',
+                    stance: '문맥과 기록을 정제해 다음 행동을 준비합니다.',
+                  };
+        const level =
+          12 +
+          (hash % 18) +
+          (service.runtime?.running ? 3 : 0) +
+          (service.presence === 'working' ? 2 : 0);
+        const maxHp = 120 + level * 5 + (service.role === 'dashboard' ? 28 : 0);
+        const hpRatio =
+          {
+            working: 0.82,
+            monitoring: 0.74,
+            resting: 0.94,
+            offline: 0.58,
+          }[service.presence] || 0.76;
+        const maxMp =
+          80 + level * 4 + (service.agentType === 'codex' ? 20 : 12);
+        const mpRatio =
+          {
+            working: 0.58,
+            monitoring: 0.82,
+            resting: 0.93,
+            offline: 0.48,
+          }[service.presence] || 0.7;
+        const sync = clampNumber(
+          28 +
+            (service.runtime?.running ? 22 : 0) +
+            teamNames.length * 11 +
+            (service.presence === 'working' ? 12 : 0) +
+            (hash % 14),
+          18,
+          100,
+        );
+        const guard =
+          20 + ((hash >> 3) % 18) + (service.role === 'dashboard' ? 8 : 0);
+        const speed =
+          18 + ((hash >> 7) % 18) + (service.presence === 'working' ? 5 : 0);
+        const focus =
+          24 +
+          ((hash >> 11) % 18) +
+          (service.agentType === 'codex' ? 6 : 2);
+        const selected = service.serviceId === ui.selectedServiceId;
+        const themeIndex = palette.findIndex(
+          (color) => color === customization.theme,
+        );
+        const accentColor =
+          themeIndex >= 0 ? palette[themeIndex] : palette[(hash >> 4) % palette.length];
+        const formationRole =
+          customization.formationRole || defaultFormationRole(service);
+        const displayName = customization.alias || service.assistantName;
+        const title = customization.title || '';
+        const motto = customization.motto || archetype.stance;
+        return {
+          service,
+          displayName,
+          title,
+          className: archetype.className,
+          formationRole,
+          formationRoleLabel: formationRoleLabel(formationRole),
+          stance: motto,
+          level,
+          hp: Math.round(maxHp * hpRatio),
+          maxHp,
+          mp: Math.round(maxMp * mpRatio),
+          maxMp,
+          sync,
+          guard,
+          speed,
+          focus,
+          rank: ['S', 'A', 'A', 'B', 'B', 'C'][hash % 6],
+          primaryColor: workerColor(service),
+          accentColor,
+          teamLabel: teamNames[0] || '무소속',
+          extraTeamLabel:
+            teamNames.length > 1 ? `+${teamNames.length - 1}` : '',
+          statusLabel: presenceQuestLabel(service.presence),
+          originLabel: originDisplayName(service.agentType),
+          summary: `${service.serviceId} · ${originDisplayName(
+            service.agentType,
+          )} · ${presenceQuestLabel(service.presence)}`,
+          tags: [
+            service.role === 'dashboard' ? 'OPS' : 'FIELD',
+            teamNames[0] || 'SOLO',
+            formationRoleLabel(formationRole),
+            service.runtime?.running ? 'LIVE' : 'CAMP',
+          ],
+          customization,
+          selected,
+        };
+      }
+
+      function buildCampaignObjectives() {
+        const derived = ui.derived || emptyDerivedState();
+        const totalServices = Math.max(
+          derived.nonDashboardServices.length || derived.services.length,
+          1,
+        );
+        const running = derived.runningServiceCount;
+        const teamTarget = Math.max(3, Math.min(totalServices, 5));
+        const temperamentTarget = Math.max(2, Math.min(totalServices, 4));
+        const state = objectiveState();
+        const completedObjectiveIds = new Set(state.completedObjectiveIds || []);
+        const objectives = [
+          {
+            id: 'restore-runtime',
+            tier: 'Act I',
+            title: '작전실 가동률 회복',
+            copy: '정비 중이거나 멈춘 워커를 다시 전장으로 돌려보냅니다.',
+            progress: `${running}/${totalServices}`,
+            percent: Math.round((running / totalServices) * 100),
+            state:
+              running === totalServices
+                ? 'clear'
+                : running >= Math.ceil(totalServices * 0.6)
+                  ? 'progress'
+                  : 'alert',
+            stateLabel:
+              running === totalServices
+                ? 'clear'
+                : running >= Math.ceil(totalServices * 0.6)
+                  ? 'active'
+                  : 'danger',
+            action: 'open-employees',
+            actionLabel: '직원 관리',
+            reward: '+Sync +Threat Control',
+          },
+          {
+            id: 'expand-guild',
+            tier: 'Act II',
+            title: '길드 윙 확장',
+            copy: '더 많은 팀을 방에 배치해 오피스를 실제 길드처럼 채웁니다.',
+            progress: `${derived.teams.length}/${teamTarget}`,
+            percent: Math.round(
+              (Math.min(derived.teams.length, teamTarget) / teamTarget) * 100,
+            ),
+            state: derived.teams.length >= teamTarget ? 'clear' : 'progress',
+            stateLabel: derived.teams.length >= teamTarget ? 'clear' : 'build',
+            action: 'open-team-management',
+            actionLabel: '팀 관리',
+            reward: '+Guild',
+          },
+          {
+            id: 'forge-temperament',
+            tier: 'Act III',
+            title: '컬쳐핏 각인',
+            copy: '직원에게 성향을 주입해 보다 RPG 파티 같은 개성을 만듭니다.',
+            progress: `${derived.temperaments.length}/${temperamentTarget}`,
+            percent: Math.round(
+              (Math.min(derived.temperaments.length, temperamentTarget) /
+                temperamentTarget) *
+                100,
+            ),
+            state:
+              derived.temperaments.length >= temperamentTarget
+                ? 'clear'
+                : 'progress',
+            stateLabel:
+              derived.temperaments.length >= temperamentTarget
+                ? 'clear'
+                : 'forge',
+            action: 'open-temperaments',
+            actionLabel: '컬쳐핏',
+            reward: '+Sync',
+          },
+          {
+            id: 'map-relic',
+            tier: 'Relic',
+            title: '맵 성소 동기화',
+            copy: '타일맵과 방 레이아웃을 다듬어 더 게임다운 HQ를 유지합니다.',
+            progress: ui.mapVersion ? 'linked' : 'missing',
+            percent: ui.mapVersion ? 100 : 42,
+            state: ui.mapVersion ? 'clear' : 'progress',
+            stateLabel: ui.mapVersion ? 'linked' : 'map',
+            action: 'open-map-desk',
+            actionLabel: '맵 관리',
+            reward: '+Guild +Morale',
+          },
+          {
+            id: 'form-party',
+            tier: 'Act IV',
+            title: '원정 파티 편성',
+            copy: '주력 멤버를 4인 파티로 꾸려 빠르게 캐릭터를 교체합니다.',
+            progress: `${partyServices().length}/${PARTY_LIMIT}`,
+            percent: Math.round((partyServices().length / PARTY_LIMIT) * 100),
+            state: partyServices().length >= 3 ? 'clear' : 'progress',
+            stateLabel: partyServices().length >= 3 ? 'ready' : 'party',
+            action: 'open-hiring',
+            actionLabel: '직원 채용',
+            reward: '+Morale',
+          },
+        ];
+        return objectives.slice(0, 4).map((objective) => ({
+          ...objective,
+          accepted: state.activeObjectiveId === objective.id,
+          completed: completedObjectiveIds.has(objective.id),
+        }));
+      }
+
+      function buildCampaignSystems() {
+        const derived = ui.derived || emptyDerivedState();
+        const totalServices = Math.max(derived.services.length, 1);
+        const monitoringCount = derived.services.filter(
+          (service) => service.presence === 'monitoring',
+        ).length;
+        const restingCount = derived.services.filter(
+          (service) =>
+            service.presence === 'resting' || service.presence === 'offline',
+        ).length;
+        const state = ui.campaignState || {
+          moraleBonus: 0,
+          syncBonus: 0,
+          threatDelta: 0,
+          guildBonus: 0,
+        };
+        const relicBonus = equippedRelicBonuses();
+        const ownedRelics = buildOwnedRelics();
+        const equippedRelics = ownedRelics.filter((relic) => relic.equipped);
+        const raid = raidState();
+        return [
+          {
+            label: 'Morale',
+            value: clampNumber(
+              36 +
+                derived.workingServiceCount * 18 +
+                derived.teams.length * 6 -
+                restingCount * 10 +
+                state.moraleBonus +
+                relicBonus.morale,
+              12,
+              100,
+            ),
+            copy: '현재 활동 인원과 팀 밀도에 따라 달라지는 파티 사기',
+          },
+          {
+            label: 'Sync',
+            value: clampNumber(
+              28 +
+                derived.runningServiceCount * 16 +
+                derived.temperaments.length * 8 +
+                state.syncBonus +
+                relicBonus.sync,
+              14,
+              100,
+            ),
+            copy: '성향과 가동률이 맞물릴수록 올라가는 동기화 지수',
+          },
+          {
+            label: 'Threat',
+            value: clampNumber(
+              18 +
+                restingCount * 14 +
+                Math.max(totalServices - derived.runningServiceCount, 0) * 10 -
+                monitoringCount * 6 +
+                state.threatDelta +
+                relicBonus.threat,
+              6,
+              100,
+            ),
+            copy: '대기 인원이 많고 빈 방이 생길수록 높아지는 리스크',
+          },
+          {
+            label: 'Guild',
+            value: clampNumber(
+              20 +
+                derived.teams.length * 18 +
+                totalServices * 8 +
+                state.guildBonus +
+                relicBonus.guild,
+              12,
+              100,
+            ),
+            copy: '길드 규모와 배치 확장도를 보여주는 HQ 성장 수치',
+          },
+          {
+            label: 'Relic',
+            value: clampNumber(
+              ownedRelics.length * 20 +
+                equippedRelics.length * 18 +
+                (raid.relicCharge || 0) * 14,
+              0,
+              100,
+            ),
+            copy: equippedRelics.length
+              ? `${equippedRelics.map((relic) => relic.title).join(' · ')} 장착 · power +${relicBonus.power}`
+              : '레이드 보상을 회수하면 영구 장비와 전력 보정이 열립니다.',
+          },
+        ];
+      }
+
+      function buildRaidEncounters() {
+        const raid = raidState();
+        const victories = raid.victories || 0;
+        const partyPower = partyCombatPower();
+
+        return RAID_ENCOUNTER_DEFS.map((encounter, index) => {
+          const bossMaxHp = encounter.baseHp + victories * 36 + index * 24;
+          const active = raid.activeEncounterId === encounter.id;
+          const bossHp = active
+            ? Math.max(raid.bossHp ?? bossMaxHp, 0)
+            : bossMaxHp;
+          const delta = partyPower - encounter.difficulty;
+          const readiness =
+            delta >= 40
+              ? { label: 'favored', state: 'clear' }
+              : delta >= 0
+                ? { label: 'ready', state: 'progress' }
+                : { label: 'risky', state: 'alert' };
+
+          return {
+            ...encounter,
+            bossMaxHp,
+            bossHp,
+            active,
+            cleared: active && bossHp <= 0,
+            readinessLabel: readiness.label,
+            state: readiness.state,
+            partyPower,
+          };
+        });
+      }
+
+      function activeRaidEncounter() {
+        const raid = raidState();
+        return buildRaidEncounters().find(
+          (encounter) => encounter.id === raid.activeEncounterId,
+        ) || null;
+      }
+
+      function buildChronicleEntries(hero, focus) {
+        const derived = ui.derived || emptyDerivedState();
+        const reserveCount = reserveServices().length;
+        const latestFocus = focus?.title || '오피스 전체';
+        const raid = activeRaidEncounter();
+        const raidProgress = raidState();
+        const ownedRelics = buildOwnedRelics();
+        const equippedRelics = ownedRelics.filter((relic) => relic.equipped);
+        const relicBonus = equippedRelicBonuses();
+        const savedRelicLoadouts = relicLoadouts().filter(
+          (loadout) => loadout.savedAt,
+        ).length;
+        const baselineEntries = [
+          {
+            label: 'Focus',
+            copy: `${latestFocus} 기준으로 전장을 훑고 있습니다.`,
+          },
+          hero
+            ? {
+                label: 'Hero',
+                copy: `${hero.service.assistantName} · ${hero.className} · ${hero.statusLabel}`,
+              }
+            : null,
+          {
+            label: 'Field',
+            copy: `작업 중 ${derived.workingServiceCount}명 · 경계 ${derived.services.filter((service) => service.presence === 'monitoring').length}명 · 대기 ${derived.services.filter((service) => service.presence !== 'working' && service.presence !== 'monitoring').length}명`,
+          },
+          {
+            label: 'Reserve',
+            copy:
+              reserveCount > 0
+                ? `예비 캐릭터 ${reserveCount}명을 언제든 파티에 편성할 수 있습니다.`
+                : '현재 파티 외 예비 캐릭터는 없습니다.',
+          },
+          {
+            label: 'Relic',
+            copy: equippedRelics.length
+              ? `${equippedRelics.map((relic) => relic.title).join(' · ')} 장착 중 · power +${relicBonus.power} · 충전 ${raidProgress.relicCharge}`
+              : ownedRelics.length
+                ? `보유 렐릭 ${ownedRelics.length}개 · 장착 슬롯 ${equippedRelics.length}/${RELIC_EQUIP_LIMIT} · 메모리 ${savedRelicLoadouts}/${relicLoadouts().length} · 충전 ${raidProgress.relicCharge}`
+                : '아직 회수한 렐릭이 없습니다. 레이드 보상을 금고에 쌓아 장기 보정을 여세요.',
+          },
+          raid
+            ? {
+                label: 'Raid',
+                copy:
+                  raid.bossHp > 0
+                    ? `${raid.title} 진행 중 · HP ${raid.bossHp}/${raid.bossMaxHp}`
+                    : `${raid.title} 격파 완료 · ${raidProgress.pendingReward || raid.reward} 회수 대기`,
+              }
+            : {
+                label: 'Raid',
+                copy:
+                  raidProgress.victories > 0
+                    ? `레이드 승리 ${raidProgress.victories}회 · 렐릭 충전 ${raidProgress.relicCharge}`
+                    : '아직 레이드가 시작되지 않았습니다. 파티를 저장하고 보스를 공략하세요.',
+              },
+        ].filter(Boolean);
+        const journalEntries = campaignJournalEntries().map((entry) => ({
+          label: entry.label,
+          copy: `${entry.copy} · ${shortTime(entry.at)}`,
+        }));
+        return [...journalEntries, ...baselineEntries].slice(0, 8);
+      }
+
+      function renderHeroPortrait(profile, size = 'large') {
+        const sizeClass =
+          size === 'micro' ? 'micro' : size === 'small' ? 'small' : 'large';
+        return `
+          <div
+            class="hero-portrait ${escapeHtml(sizeClass)}"
+            style="--hero-accent:${escapeHtml(
+              profile.primaryColor,
+            )};--hero-accent-soft:${escapeHtml(profile.accentColor)};"
+          >
+            <div class="hero-rank">${escapeHtml(profile.rank)}</div>
+            <div class="hero-figure">
+              <div class="hero-cloak"></div>
+              <div class="hero-body"></div>
+              <div class="hero-arm left"></div>
+              <div class="hero-arm right"></div>
+              <div class="hero-head"></div>
+              <div class="hero-hair"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderPartyMemberCard(profile, slotIndex) {
+        return `
+          <article
+            class="party-member-card ${profile.selected ? 'selected' : ''}"
+            style="--hero-accent:${escapeHtml(
+              profile.primaryColor,
+            )};--hero-accent-soft:${escapeHtml(profile.accentColor)};"
+          >
+            <div class="party-member-head">
+              ${renderHeroPortrait(profile, 'small')}
+              <div class="hero-card-copy">
+                <div class="hero-card-top">
+                  <div class="hero-card-name">${escapeHtml(
+                    profile.displayName,
+                  )}</div>
+                  <div class="hero-card-slot">slot ${escapeHtml(
+                    String(slotIndex + 1),
+                  )}</div>
+                </div>
+                <div class="hero-card-class">${escapeHtml(
+                  `Lv.${profile.level} · ${profile.className}`,
+                )}</div>
+                <div class="hero-card-subcopy">${escapeHtml(
+                  `${profile.teamLabel}${profile.extraTeamLabel ? ` ${profile.extraTeamLabel}` : ''} · ${profile.statusLabel} · ${profile.formationRoleLabel}`,
+                )}</div>
+                <div class="hero-tag-row">
+                  ${profile.tags
+                    .map(
+                      (tag) =>
+                        `<span class="hero-tag">${escapeHtml(tag)}</span>`,
+                    )
+                    .join('')}
+                </div>
+              </div>
+            </div>
+            <div class="hero-card-stats">
+              <div class="hero-card-stat">
+                <div class="hero-card-stat-top">
+                  <span>HP</span>
+                  <strong>${escapeHtml(
+                    `${profile.hp}/${profile.maxHp}`,
+                  )}</strong>
+                </div>
+                <div class="hero-meter">
+                  <span style="width:${escapeHtml(
+                    String(Math.round((profile.hp / profile.maxHp) * 100)),
+                  )}%"></span>
+                </div>
+              </div>
+              <div class="hero-card-stat">
+                <div class="hero-card-stat-top">
+                  <span>SYNC</span>
+                  <strong>${escapeHtml(`${profile.sync}%`)}</strong>
+                </div>
+                <div class="hero-meter">
+                  <span style="width:${escapeHtml(
+                    String(profile.sync),
+                  )}%"></span>
+                </div>
+              </div>
+            </div>
+            <div class="party-member-actions">
+              <button
+                type="button"
+                class="secondary small"
+                data-action="select-hero"
+                data-service-id="${escapeHtml(profile.service.serviceId)}"
+              >
+                선택
+              </button>
+              <button
+                type="button"
+                class="secondary small"
+                data-action="select-service"
+                data-service-id="${escapeHtml(profile.service.serviceId)}"
+              >
+                상세
+              </button>
+              <button
+                type="button"
+                class="secondary small"
+                data-action="toggle-party-member"
+                data-service-id="${escapeHtml(profile.service.serviceId)}"
+              >
+                파티 해제
+              </button>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderReserveCard(profile) {
+        return `
+          <article
+            class="reserve-card"
+            style="--hero-accent:${escapeHtml(
+              profile.primaryColor,
+            )};--hero-accent-soft:${escapeHtml(profile.accentColor)};"
+          >
+            <div class="reserve-head">
+              ${renderHeroPortrait(profile, 'micro')}
+              <div class="reserve-copy">
+                <div class="reserve-name">${escapeHtml(
+                  profile.displayName,
+                )}</div>
+                <div class="reserve-class">${escapeHtml(
+                  `${profile.className} · ${profile.statusLabel} · ${profile.formationRoleLabel}`,
+                )}</div>
+                <p>${escapeHtml(profile.title || profile.teamLabel)}</p>
+              </div>
+            </div>
+            <div class="reserve-actions">
+              <button
+                type="button"
+                class="secondary small"
+                data-action="select-hero"
+                data-service-id="${escapeHtml(profile.service.serviceId)}"
+              >
+                미리보기
+              </button>
+              <button
+                type="button"
+                class="secondary small"
+                data-action="toggle-party-member"
+                data-service-id="${escapeHtml(profile.service.serviceId)}"
+              >
+                파티 편성
+              </button>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderRelicCard(relic) {
+        return `
+          <article class="relic-card ${relic.equipped ? 'equipped' : ''}">
+            <div class="mission-top">
+              <div>
+                <div class="mission-tier">Relic Vault</div>
+                <h3>${escapeHtml(relic.title)}</h3>
+              </div>
+              <span class="pill">${escapeHtml(relic.equipped ? 'equipped' : 'stored')}</span>
+            </div>
+            <p>${escapeHtml(relic.copy)}</p>
+            <div class="relic-bonus-list">
+              ${formatRelicBonuses(relic)
+                .map(
+                  (bonus) =>
+                    `<span class="relic-bonus">${escapeHtml(bonus)}</span>`,
+                )
+                .join('')}
+            </div>
+            <div class="relic-meta">
+              <span>${escapeHtml(relic.sourceTitle)}</span>
+              <span>${escapeHtml(relic.equipped ? 'slot active' : 'vault standby')}</span>
+            </div>
+            <div class="party-controls">
+              <button
+                type="button"
+                class="secondary small"
+                data-action="${escapeHtml(relic.equipped ? 'unequip-relic' : 'equip-relic')}"
+                data-relic-id="${escapeHtml(relic.id)}"
+              >
+                ${escapeHtml(relic.equipped ? '장착 해제' : '장착')}
+              </button>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderRelicLoadoutCard(loadout, index) {
+        const relics = uniqueIds(loadout.relicIds || [])
+          .map((relicId) => relicDefById(relicId))
+          .filter(Boolean);
+        const bonuses = relicBonusesForIds(loadout.relicIds || []);
+        const savedState = loadout.savedAt
+          ? `saved ${shortTime(loadout.savedAt)}`
+          : 'unsaved';
+        return `
+          <article class="preset-card">
+            <div class="preset-top">
+              <div>
+                <div class="mission-tier">Loadout ${escapeHtml(String(index + 1))}</div>
+                <h3>${escapeHtml(loadout.name)}</h3>
+              </div>
+              <span class="pill">${escapeHtml(
+                `${relics.length}/${RELIC_EQUIP_LIMIT}`,
+              )}</span>
+            </div>
+            <p>${escapeHtml(
+              relics.length
+                ? relics.map((relic) => relic.title).join(' / ')
+                : loadout.savedAt
+                  ? '빈 세팅이 저장되어 있습니다.'
+                  : '저장된 렐릭 세팅 없음',
+            )}</p>
+            <div class="preset-meta">
+              <span>${escapeHtml(
+                relics.length
+                  ? formatRelicBonusSummary(bonuses)
+                  : 'vault standby',
+              )}</span>
+              <span>${escapeHtml(savedState)}</span>
+            </div>
+            <div class="party-controls">
+              <button
+                type="button"
+                class="secondary small"
+                data-action="load-relic-loadout"
+                data-loadout-slot="${escapeHtml(loadout.slotId)}"
+              >
+                불러오기
+              </button>
+              <button
+                type="button"
+                class="secondary small"
+                data-action="save-relic-loadout"
+                data-loadout-slot="${escapeHtml(loadout.slotId)}"
+              >
+                현재 렐릭 저장
+              </button>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderPartyPresetCard(preset, index) {
+        const profiles = (preset.serviceIds || [])
+          .map((serviceId) => serviceById(serviceId))
+          .filter(Boolean)
+          .map((service) => buildHeroProfile(service));
+        const rosterCopy = profiles.length
+          ? profiles.map((profile) => profile.displayName).slice(0, 3).join(' / ')
+          : '저장된 멤버 없음';
+
+        return `
+          <article class="preset-card">
+            <div class="preset-top">
+              <div>
+                <div class="mission-tier">Squad ${escapeHtml(String(index + 1))}</div>
+                <h3>${escapeHtml(preset.name)}</h3>
+              </div>
+              <span class="pill">${escapeHtml(`${profiles.length}/${PARTY_LIMIT}`)}</span>
+            </div>
+            <p>${escapeHtml(rosterCopy)}</p>
+            <div class="preset-meta">
+              <span>${escapeHtml(`${partyCombatPower(profiles)} power`)}</span>
+              <span>${escapeHtml(profiles[0]?.formationRoleLabel || 'idle')}</span>
+            </div>
+            <div class="party-controls">
+              <button
+                type="button"
+                class="secondary small"
+                data-action="load-party-preset"
+                data-preset-slot="${escapeHtml(preset.slotId)}"
+              >
+                불러오기
+              </button>
+              <button
+                type="button"
+                class="secondary small"
+                data-action="save-party-preset"
+                data-preset-slot="${escapeHtml(preset.slotId)}"
+              >
+                현재 파티 저장
+              </button>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderRaidEncounterCard(encounter) {
+        const raid = raidState();
+        const bossPercent = encounter.active
+          ? Math.max(
+              0,
+              Math.round((encounter.bossHp / Math.max(encounter.bossMaxHp, 1)) * 100),
+            )
+          : Math.max(
+              18,
+              Math.min(
+                100,
+                Math.round((encounter.partyPower / Math.max(encounter.difficulty, 1)) * 100),
+              ),
+            );
+
+        return `
+          <article class="mission-card ${escapeHtml(encounter.state)} ${encounter.cleared ? 'clear' : ''}">
+            <div class="mission-top">
+              <div>
+                <div class="mission-tier">${escapeHtml(encounter.tier)}</div>
+                <h3>${escapeHtml(encounter.title)}</h3>
+              </div>
+              <span class="pill">${escapeHtml(
+                encounter.cleared
+                  ? 'loot ready'
+                  : encounter.active
+                    ? 'engaged'
+                    : encounter.readinessLabel,
+              )}</span>
+            </div>
+            <p>${escapeHtml(encounter.copy)}</p>
+            <div class="hero-meter">
+              <span style="width:${escapeHtml(String(bossPercent))}%"></span>
+            </div>
+            <div class="mission-footer">
+              <span>${escapeHtml(
+                encounter.active
+                  ? `boss ${encounter.bossHp}/${encounter.bossMaxHp} · ${encounter.reward}`
+                  : `power ${encounter.partyPower}/${encounter.difficulty} · ${encounter.reward}`,
+              )}</span>
+              <div class="party-controls">
+                ${
+                  encounter.active
+                    ? encounter.cleared
+                      ? `
+                        <button
+                          type="button"
+                          class="secondary mission-action"
+                          data-action="claim-raid-loot"
+                        >
+                          보상 회수
+                        </button>
+                      `
+                      : `
+                        <button
+                          type="button"
+                          class="secondary mission-action"
+                          data-action="raid-command"
+                          data-command="strike"
+                        >
+                          강타
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary mission-action"
+                          data-action="raid-command"
+                          data-command="burst"
+                        >
+                          오버클럭
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary mission-action"
+                          data-action="raid-command"
+                          data-command="guard"
+                        >
+                          수비
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary mission-action"
+                          data-action="raid-command"
+                          data-command="rally"
+                        >
+                          집결
+                        </button>
+                      `
+                    : `
+                      <button
+                        type="button"
+                        class="secondary mission-action"
+                        data-action="begin-raid"
+                        data-encounter-id="${escapeHtml(encounter.id)}"
+                      >
+                        레이드 시작
+                      </button>
+                    `
+                }
+              </div>
+            </div>
+            ${
+              encounter.active
+                ? `
+                  <div class="note raid-outcome">
+                    ${escapeHtml(
+                      raid.lastOutcome ||
+                        `${encounter.title}와 교전 중입니다. 현재 선택된 영웅의 스킬로 흐름을 바꾸세요.`,
+                    )}
+                  </div>
+                `
+                : ''
+            }
+          </article>
+        `;
+      }
+
+      function selectHero(serviceId) {
+        const service = serviceById(serviceId);
+        if (!service) return;
+        ui.selectedServiceId = service.serviceId;
+        focusCameraOn('service', service.serviceId);
+        render();
+        if (ui.activeDesk === 'hr' && ui.activeTab === 'employees') {
+          void loadServiceLogs(service.serviceId, true);
+        }
+      }
+
+      function togglePartyMember(serviceId) {
+        const service = serviceById(serviceId);
+        if (!service) return;
+        const currentParty = uniqueIds(ui.heroPartyServiceIds);
+        const existingIndex = currentParty.indexOf(serviceId);
+        if (existingIndex >= 0) {
+          if (currentParty.length === 1) {
+            showToast('최소 한 명은 파티에 남겨야 합니다.', 'info');
+            return;
+          }
+          currentParty.splice(existingIndex, 1);
+          ui.heroPartyServiceIds = currentParty;
+          if (ui.selectedServiceId === serviceId) {
+            ui.selectedServiceId = currentParty[0] || null;
+          }
+          persistUiPrefs();
+          render();
+          return;
+        }
+        if (currentParty.length >= PARTY_LIMIT) {
+          showToast('파티 정원은 4명입니다. 먼저 한 명을 해제하세요.', 'info');
+          return;
+        }
+        ui.heroPartyServiceIds = [...currentParty, serviceId];
+        ui.selectedServiceId = serviceId;
+        focusCameraOn('service', serviceId);
+        persistUiPrefs();
+        render();
+      }
+
+      function savePartyPreset(slotId) {
+        if (!slotId) return;
+        ui.heroPartyPresets = partyPresets().map((preset) =>
+          preset.slotId === slotId
+            ? {
+                ...preset,
+                serviceIds: uniqueIds(ui.heroPartyServiceIds).slice(0, PARTY_LIMIT),
+              }
+            : preset,
+        );
+        persistUiPrefs();
+        pushCampaignJournal(
+          'Squad Save',
+          `${slotId.toUpperCase()} 슬롯에 현재 파티를 저장했습니다.`,
+        );
+        render();
+        showToast('파티 프리셋 저장', 'success');
+      }
+
+      function loadPartyPreset(slotId) {
+        const preset = partyPresets().find((entry) => entry.slotId === slotId);
+        const nextParty = uniqueIds(preset?.serviceIds || [])
+          .map((serviceId) => serviceById(serviceId)?.serviceId || '')
+          .filter(Boolean)
+          .slice(0, PARTY_LIMIT);
+
+        if (!nextParty.length) {
+          showToast('이 슬롯에는 저장된 파티가 없습니다.', 'info');
+          return;
+        }
+
+        ui.heroPartyServiceIds = nextParty;
+        ui.selectedServiceId = nextParty[0];
+        focusCameraOn('service', nextParty[0]);
+        persistUiPrefs();
+        pushCampaignJournal(
+          'Squad Load',
+          `${preset.name} 구성을 불러와 파티를 즉시 교체했습니다.`,
+        );
+        render();
+        showToast('파티 프리셋 불러오기', 'success');
+      }
+
+      function cycleHero(step) {
+        const party = partyServices();
+        if (!party.length) return;
+        const currentIndex = party.findIndex(
+          (service) => service.serviceId === ui.selectedServiceId,
+        );
+        const baseIndex = currentIndex >= 0 ? currentIndex : 0;
+        const nextIndex =
+          (baseIndex + step + party.length) % Math.max(party.length, 1);
+        selectHero(party[nextIndex].serviceId);
+      }
+
+      async function handleHeroCustomizationSubmit(form) {
+        const formData = new FormData(form);
+        const serviceId = String(formData.get('serviceId') || '').trim();
+        if (!serviceId || !serviceById(serviceId)) {
+          throw new Error('대상 캐릭터를 찾을 수 없습니다.');
+        }
+
+        const nextEntry = {
+          alias: String(formData.get('alias') || '').trim(),
+          title: String(formData.get('title') || '').trim(),
+          formationRole:
+            String(formData.get('formationRole') || '').trim() ||
+            defaultFormationRole(serviceById(serviceId)),
+          theme: String(formData.get('theme') || '').trim(),
+          motto: String(formData.get('motto') || '').trim(),
+        };
+
+        const hasMeaningfulCustomization = Boolean(
+          nextEntry.alias ||
+            nextEntry.title ||
+            nextEntry.motto ||
+            nextEntry.formationRole !== defaultFormationRole(serviceById(serviceId)) ||
+            nextEntry.theme,
+        );
+
+        if (hasMeaningfulCustomization) {
+          ui.heroCustomizations = {
+            ...ui.heroCustomizations,
+            [serviceId]: nextEntry,
+          };
+        } else {
+          const nextCustomizations = { ...ui.heroCustomizations };
+          delete nextCustomizations[serviceId];
+          ui.heroCustomizations = nextCustomizations;
+        }
+
+        persistUiPrefs();
+        render();
+        showToast('캐릭터 커스터마이징을 저장했습니다.', 'success');
+      }
+
+      function resetHeroCustomization(serviceId) {
+        if (!serviceId) return;
+        const nextCustomizations = { ...ui.heroCustomizations };
+        delete nextCustomizations[serviceId];
+        ui.heroCustomizations = nextCustomizations;
+        persistUiPrefs();
+        render();
+        showToast('기본 캐릭터 설정으로 되돌렸습니다.', 'info');
+      }
+
+      function beginRaid(encounterId) {
+        const encounter = buildRaidEncounters().find(
+          (entry) => entry.id === encounterId,
+        );
+        if (!encounter) return;
+        if (partyServices().length < 2) {
+          showToast('레이드는 최소 2인 파티가 필요합니다.', 'info');
+          return;
+        }
+
+        ui.campaignState = {
+          ...ui.campaignState,
+          raid: {
+            ...raidState(),
+            activeEncounterId: encounter.id,
+            bossHp: encounter.bossMaxHp,
+            bossMaxHp: encounter.bossMaxHp,
+            pendingReward: '',
+            lastBossTitle: encounter.title,
+            lastOutcome: `${encounter.title}이(가) HQ 외곽에 출현했습니다.`,
+          },
+        };
+        pushCampaignJournal(
+          'Raid Start',
+          `${encounter.title} 레이드를 개시했습니다. 보상은 ${encounter.reward}입니다.`,
+        );
+        persistUiPrefs();
+        render();
+        showToast('레이드 시작', 'success');
+      }
+
+      function executeRaidCommand(command) {
+        const encounter = activeRaidEncounter();
+        const hero = selectedHeroProfile();
+        if (!encounter || !hero) return;
+
+        const raid = raidState();
+        const partySize = Math.max(partyServices().length, 1);
+        const power = partyCombatPower();
+        let damage = 0;
+        let moraleDelta = 0;
+        let syncDelta = 0;
+        let threatDelta = 0;
+        let guildDelta = 0;
+        let logLine = '';
+
+        if (command === 'strike') {
+          damage = Math.round(power * 0.22 + hero.focus * 1.4 + hero.level * 2);
+          syncDelta = 2;
+          logLine = `${hero.displayName}이(가) ${encounter.title}에게 강타를 날려 ${damage} 피해를 입혔습니다.`;
+        } else if (command === 'burst') {
+          damage = Math.round(power * 0.28 + hero.focus * 1.8 + hero.mp * 0.3);
+          syncDelta = 4;
+          threatDelta = 3;
+          logLine = `${hero.displayName}이(가) 오버클럭으로 ${encounter.title}의 코어를 흔들어 ${damage} 피해를 만들었습니다.`;
+        } else if (command === 'guard') {
+          damage = Math.round(power * 0.12 + hero.guard * 1.7);
+          threatDelta = -6;
+          guildDelta = 2;
+          logLine = `${hero.displayName}이(가) 방어 진형을 세워 ${encounter.title}의 위협도를 낮추고 ${damage} 피해를 누적했습니다.`;
+        } else if (command === 'rally') {
+          damage = Math.round(power * 0.14 + hero.speed * 1.3 + partySize * 8);
+          moraleDelta = 6;
+          syncDelta = 3;
+          logLine = `${hero.displayName}이(가) 파티를 집결시켜 사기를 올리고 ${damage} 피해를 유도했습니다.`;
+        } else {
+          return;
+        }
+
+        const bossHp = Math.max(0, raid.bossHp - damage);
+        const cleared = bossHp <= 0;
+
+        ui.campaignState = {
+          ...ui.campaignState,
+          moraleBonus: clampNumber(
+            (ui.campaignState.moraleBonus || 0) + moraleDelta,
+            0,
+            40,
+          ),
+          syncBonus: clampNumber(
+            (ui.campaignState.syncBonus || 0) + syncDelta,
+            0,
+            40,
+          ),
+          threatDelta: clampNumber(
+            (ui.campaignState.threatDelta || 0) + threatDelta,
+            -40,
+            40,
+          ),
+          guildBonus: clampNumber(
+            (ui.campaignState.guildBonus || 0) + guildDelta,
+            0,
+            40,
+          ),
+          raid: {
+            ...raid,
+            bossHp,
+            bossMaxHp: raid.bossMaxHp || encounter.bossMaxHp,
+            pendingReward: cleared ? encounter.reward : raid.pendingReward,
+            lastBossTitle: encounter.title,
+            lastOutcome: cleared
+              ? `${hero.displayName}이(가) ${encounter.title}을 격파했습니다. ${encounter.reward} 회수 준비 완료.`
+              : logLine,
+          },
+        };
+
+        pushCampaignJournal(
+          cleared ? 'Raid Clear' : 'Raid Turn',
+          cleared
+            ? `${encounter.title} 레이드 정리 완료. ${encounter.reward}를 회수할 수 있습니다.`
+            : logLine,
+        );
+        persistUiPrefs();
+        render();
+        showToast(
+          cleared ? `${encounter.title} 격파` : `${raidCommandLabel(command)} 실행`,
+          'success',
+        );
+      }
+
+      function claimRaidLoot() {
+        const encounter = activeRaidEncounter();
+        const raid = raidState();
+        if (!encounter || raid.bossHp > 0) return;
+        const rewardRelic = relicDefForEncounter(encounter.id);
+        const inventory = ownedRelicIds();
+        const equipped = equippedRelicIds();
+        const alreadyOwned = rewardRelic
+          ? inventory.includes(rewardRelic.id)
+          : false;
+        const nextInventory =
+          rewardRelic && !alreadyOwned
+            ? [...inventory, rewardRelic.id]
+            : inventory;
+        const autoEquipped =
+          rewardRelic && !alreadyOwned && equipped.length < RELIC_EQUIP_LIMIT;
+        const nextEquippedRelicIds =
+          rewardRelic && autoEquipped
+            ? [...equipped, rewardRelic.id]
+            : equipped;
+        const lootTitle = rewardRelic?.title || encounter.reward;
+        const outcomeCopy = rewardRelic
+          ? alreadyOwned
+            ? `${lootTitle} 공명이 누적되어 렐릭 충전이 상승했습니다.`
+            : autoEquipped
+              ? `${lootTitle}를 확보해 즉시 장착했습니다.`
+              : `${lootTitle}를 확보해 렐릭 금고에 보관했습니다.`
+          : `${encounter.reward}를 확보해 길드 전력을 강화했습니다.`;
+        const journalCopy = rewardRelic
+          ? alreadyOwned
+            ? `${lootTitle}와 기존 금고가 공명해 추가 충전을 확보했습니다.`
+            : autoEquipped
+              ? `${lootTitle} 회수 완료. 즉시 장착되어 파티 전투력이 상승했습니다.`
+              : `${lootTitle} 회수 완료. 렐릭 금고에서 언제든 장착할 수 있습니다.`
+          : `${encounter.reward} 회수 완료. 길드 전력과 사기가 함께 상승했습니다.`;
+
+        ui.campaignState = {
+          ...ui.campaignState,
+          moraleBonus: clampNumber((ui.campaignState.moraleBonus || 0) + 6, 0, 40),
+          syncBonus: clampNumber((ui.campaignState.syncBonus || 0) + 5, 0, 40),
+          threatDelta: clampNumber(
+            (ui.campaignState.threatDelta || 0) - 8,
+            -40,
+            40,
+          ),
+          guildBonus: clampNumber((ui.campaignState.guildBonus || 0) + 6, 0, 40),
+          relicInventory: nextInventory,
+          equippedRelicIds: nextEquippedRelicIds,
+          raid: {
+            ...raid,
+            activeEncounterId: '',
+            bossHp: 0,
+            bossMaxHp: 0,
+            victories: (raid.victories || 0) + 1,
+            relicCharge: (raid.relicCharge || 0) + 1,
+            pendingReward: '',
+            lastOutcome: outcomeCopy,
+            lastBossTitle: encounter.title,
+          },
+        };
+        pushCampaignJournal('Loot', journalCopy);
+        persistUiPrefs();
+        render();
+        showToast('레이드 보상 회수', 'success');
+      }
+
+      function equipRelic(relicId) {
+        const relic = relicDefById(relicId);
+        if (!relic || !ownedRelicIds().includes(relicId)) return;
+        const equipped = equippedRelicIds();
+        if (equipped.includes(relicId)) return;
+        if (equipped.length >= RELIC_EQUIP_LIMIT) {
+          showToast(`렐릭은 ${RELIC_EQUIP_LIMIT}개까지만 장착할 수 있습니다.`, 'info');
+          return;
+        }
+
+        ui.campaignState = {
+          ...ui.campaignState,
+          equippedRelicIds: [...equipped, relicId],
+        };
+        pushCampaignJournal(
+          'Relic Equip',
+          `${relic.title} 장착 완료. 파티 전투력 +${relic.power} 보정을 적용했습니다.`,
+        );
+        persistUiPrefs();
+        render();
+        showToast(`${relic.title} 장착`, 'success');
+      }
+
+      function unequipRelic(relicId) {
+        const relic = relicDefById(relicId);
+        if (!relic) return;
+        const equipped = equippedRelicIds();
+        if (!equipped.includes(relicId)) return;
+
+        ui.campaignState = {
+          ...ui.campaignState,
+          equippedRelicIds: equipped.filter((entry) => entry !== relicId),
+        };
+        pushCampaignJournal(
+          'Relic Vault',
+          `${relic.title} 장착을 해제하고 금고에 보관했습니다.`,
+        );
+        persistUiPrefs();
+        render();
+        showToast(`${relic.title} 장착 해제`, 'info');
+      }
+
+      function saveRelicLoadout(slotId) {
+        if (!slotId) return;
+        const equipped = equippedRelicIds();
+        const savedAt = new Date().toISOString();
+        const nextLoadouts = relicLoadouts().map((loadout) =>
+          loadout.slotId === slotId
+            ? {
+                ...loadout,
+                relicIds: equipped,
+                savedAt,
+              }
+            : loadout,
+        );
+        const loadout = nextLoadouts.find((entry) => entry.slotId === slotId);
+        const relicTitles = equipped
+          .map((relicId) => relicDefById(relicId)?.title || '')
+          .filter(Boolean);
+
+        ui.campaignState = {
+          ...ui.campaignState,
+          relicLoadouts: nextLoadouts,
+        };
+        pushCampaignJournal(
+          'Relic Memory',
+          relicTitles.length
+            ? `${loadout?.name || slotId} 슬롯에 ${relicTitles.join(' / ')} 구성을 저장했습니다.`
+            : `${loadout?.name || slotId} 슬롯을 빈 렐릭 세팅으로 저장했습니다.`,
+        );
+        persistUiPrefs();
+        render();
+        showToast('렐릭 메모리 저장', 'success');
+      }
+
+      function loadRelicLoadout(slotId) {
+        const loadout = relicLoadouts().find((entry) => entry.slotId === slotId);
+        if (!loadout?.savedAt) {
+          showToast('이 슬롯에는 저장된 렐릭 세팅이 없습니다.', 'info');
+          return;
+        }
+        const nextEquippedRelicIds = uniqueIds(loadout.relicIds || [])
+          .filter((relicId) => ownedRelicIds().includes(relicId))
+          .slice(0, RELIC_EQUIP_LIMIT);
+        const relicTitles = nextEquippedRelicIds
+          .map((relicId) => relicDefById(relicId)?.title || '')
+          .filter(Boolean);
+
+        ui.campaignState = {
+          ...ui.campaignState,
+          equippedRelicIds: nextEquippedRelicIds,
+        };
+        pushCampaignJournal(
+          'Relic Loadout',
+          relicTitles.length
+            ? `${loadout.name} 구성을 불러와 ${relicTitles.join(' / ')}를 즉시 장착했습니다.`
+            : `${loadout.name} 구성을 불러와 모든 렐릭을 금고 대기 상태로 전환했습니다.`,
+        );
+        persistUiPrefs();
+        render();
+        showToast('렐릭 메모리 불러오기', 'success');
+      }
+
+      function triggerHeroAction(actionId) {
+        const hero = selectedHeroProfile();
+        if (!hero) return;
+        const focus = currentFocusSummary();
+        const nextState = {
+          ...ui.campaignState,
+        };
+        const heroName = hero.displayName;
+        const focusTitle = focus?.title || '오피스 전체';
+
+        if (actionId === 'scout') {
+          nextState.syncBonus = clampNumber((nextState.syncBonus || 0) + 4, 0, 40);
+          nextState.threatDelta = clampNumber((nextState.threatDelta || 0) - 6, -40, 40);
+          pushCampaignJournal(
+            'Scout',
+            `${heroName}이(가) ${focusTitle} 주변을 정찰해 위험 수치를 낮췄습니다.`,
+          );
+        } else if (actionId === 'brief') {
+          nextState.syncBonus = clampNumber((nextState.syncBonus || 0) + 6, 0, 40);
+          nextState.guildBonus = clampNumber((nextState.guildBonus || 0) + 3, 0, 40);
+          pushCampaignJournal(
+            'Brief',
+            `${heroName}이(가) ${focusTitle} 브리핑을 마치고 길드 동기화를 끌어올렸습니다.`,
+          );
+        } else if (actionId === 'fortify') {
+          nextState.threatDelta = clampNumber((nextState.threatDelta || 0) - 10, -40, 40);
+          nextState.guildBonus = clampNumber((nextState.guildBonus || 0) + 2, 0, 40);
+          pushCampaignJournal(
+            'Fortify',
+            `${heroName}이(가) ${focusTitle} 방어선을 점검해 HQ 안정도를 높였습니다.`,
+          );
+        } else if (actionId === 'celebrate') {
+          nextState.moraleBonus = clampNumber((nextState.moraleBonus || 0) + 8, 0, 40);
+          pushCampaignJournal(
+            'Celebrate',
+            `${heroName}이(가) ${focusTitle}에서 사기 충전 이벤트를 열었습니다.`,
+          );
+        } else {
+          return;
+        }
+
+        nextState.journal = campaignJournalEntries();
+        ui.campaignState = nextState;
+        persistUiPrefs();
+        render();
+        showToast(`${heroActionLabel(actionId)} 실행`, 'success');
+      }
+
+      function acceptObjective(objectiveId) {
+        if (!objectiveId) return;
+        ui.campaignState = {
+          ...ui.campaignState,
+          activeObjectiveId: objectiveId,
+        };
+        const objective = buildCampaignObjectives().find(
+          (entry) => entry.id === objectiveId,
+        );
+        pushCampaignJournal(
+          'Quest',
+          `${objective?.title || objectiveId} 퀘스트를 수락했습니다.`,
+        );
+        persistUiPrefs();
+        render();
+        showToast('퀘스트 수락', 'success');
+      }
+
+      function resolveObjective(objectiveId) {
+        const objective = buildCampaignObjectives().find(
+          (entry) => entry.id === objectiveId,
+        );
+        if (!objective) return;
+        const completedObjectiveIds = new Set(
+          objectiveState().completedObjectiveIds || [],
+        );
+        completedObjectiveIds.add(objectiveId);
+        ui.campaignState = {
+          ...ui.campaignState,
+          activeObjectiveId:
+            ui.campaignState.activeObjectiveId === objectiveId
+              ? ''
+              : ui.campaignState.activeObjectiveId,
+          completedObjectiveIds: [...completedObjectiveIds],
+          moraleBonus: clampNumber(
+            (ui.campaignState.moraleBonus || 0) + 4,
+            0,
+            40,
+          ),
+          syncBonus: clampNumber((ui.campaignState.syncBonus || 0) + 4, 0, 40),
+          guildBonus: clampNumber(
+            (ui.campaignState.guildBonus || 0) + 3,
+            0,
+            40,
+          ),
+          threatDelta: clampNumber(
+            (ui.campaignState.threatDelta || 0) - 4,
+            -40,
+            40,
+          ),
+        };
+        pushCampaignJournal(
+          'Quest Clear',
+          `${objective.title} 퀘스트를 정리하고 보상 ${objective.reward}를 반영했습니다.`,
+        );
+        persistUiPrefs();
+        render();
+        showToast('퀘스트 완료 처리', 'success');
+      }
+
+      function resetCampaignState() {
+        ui.campaignState = createDefaultCampaignState();
+        persistUiPrefs();
+        render();
+        showToast('캠페인 로그와 버프를 초기화했습니다.', 'info');
       }
 
       function renderServiceOriginConfig(args = {}) {
@@ -2193,6 +5391,10 @@
           init.headers = { 'content-type': 'application/json' };
         }
         const response = await fetch(path, init);
+        if (response.status === 401) {
+          window.location.href = '/login';
+          throw new Error('Authentication required');
+        }
         const payload = await response
           .json()
           .catch(() => ({ error: `HTTP ${response.status}` }));
@@ -2260,6 +5462,25 @@
       function ensureSelection() {
         if (!ui.data) return;
         const derived = ui.derived || emptyDerivedState();
+        const availablePartyIds = (
+          derived.nonDashboardServices.length
+            ? derived.nonDashboardServices
+            : derived.services
+        ).map((service) => service.serviceId);
+        const availablePartyIdSet = new Set(availablePartyIds);
+
+        ui.heroPartyServiceIds = uniqueIds(ui.heroPartyServiceIds).filter(
+          (serviceId) => availablePartyIdSet.has(serviceId),
+        );
+        ui.heroPartyPresets = partyPresets().map((preset) => ({
+          ...preset,
+          serviceIds: uniqueIds(preset.serviceIds).filter((serviceId) =>
+            availablePartyIdSet.has(serviceId),
+          ),
+        }));
+        if (!ui.heroPartyServiceIds.length) {
+          ui.heroPartyServiceIds = availablePartyIds.slice(0, PARTY_LIMIT);
+        }
 
         if (!ui.selectedTeamId || !derived.teamsById.has(ui.selectedTeamId)) {
           ui.selectedTeamId = derived.teams[0]?.teamId || null;
@@ -2267,6 +5488,7 @@
 
         const preferredService =
           serviceById(ui.selectedServiceId) ||
+          serviceById(ui.heroPartyServiceIds[0]) ||
           derived.nonDashboardServices[0] ||
           derived.services[0] ||
           null;
@@ -2300,6 +5522,27 @@
         ) {
           ui.selectedLayoutTargetKey = null;
         }
+
+        if (ui.cameraTargetKey.startsWith('service:')) {
+          const serviceId = ui.cameraTargetKey.slice('service:'.length);
+          if (!serviceById(serviceId)) {
+            ui.cameraTargetKey = '';
+          }
+        } else if (ui.cameraTargetKey.startsWith('team:')) {
+          const teamId = ui.cameraTargetKey.slice('team:'.length);
+          if (!derived.teamsById.has(teamId)) {
+            ui.cameraTargetKey = '';
+          }
+        } else if (
+          ui.cameraTargetKey.startsWith('room:') &&
+          !['management', 'general', 'hr', 'lounge', 'offsite', 'ops'].includes(
+            ui.cameraTargetKey.slice('room:'.length),
+          )
+        ) {
+          ui.cameraTargetKey = '';
+        }
+
+        persistUiPrefs();
       }
 
       function destroyOfficeGame() {
@@ -2464,6 +5707,10 @@
         ui.activeDesk = desk;
         ui.activeTab = tabId || defaultTab;
         ui.selectedRoomId = null;
+        const roomId = roomIdForDesk(desk);
+        if (roomId) {
+          focusCameraOn('room', roomId);
+        }
         render();
       }
 
@@ -2503,6 +5750,7 @@
         ui.selectedTeamId = teamId;
         ui.detailMode = 'team';
         ui.selectedRoomId = null;
+        focusCameraOn('team', teamId);
         const target = teamChatTarget(teamId);
         if (target) {
           if (ui.selectedTeamChatServiceId !== target.serviceId) {
@@ -2524,6 +5772,7 @@
         ui.activeDesk = 'management';
         ui.activeTab = 'team-management';
         ui.selectedRoomId = null;
+        focusCameraOn('team', teamId);
         render();
       }
 
@@ -2533,6 +5782,7 @@
         ui.activeDesk = 'hr';
         ui.activeTab = 'employees';
         ui.selectedRoomId = null;
+        focusCameraOn('service', serviceId);
         render();
         void loadServiceLogs(serviceId, true);
       }
@@ -2543,6 +5793,7 @@
         ui.activeDesk = 'hr';
         ui.activeTab = 'temperaments';
         ui.selectedRoomId = null;
+        focusCameraOn('room', 'hr');
         render();
       }
 
@@ -2552,12 +5803,14 @@
         ui.activeDesk = 'hr';
         ui.activeTab = 'temperaments';
         ui.selectedRoomId = null;
+        focusCameraOn('room', 'hr');
         render();
       }
 
       function selectOperationalRoom(roomId) {
         ui.detailMode = 'room';
         ui.selectedRoomId = roomId;
+        focusCameraOn('room', roomId);
         render();
         if (roomId === 'ops') {
           void loadDashboardPreview();
@@ -3313,6 +6566,181 @@
         camera.centerOn(width / 2, height / 2);
       }
 
+      function paddedPercentRect(rect, padX, padY) {
+        const width = clampNumber(rect.width + padX * 2, 12, 100);
+        const height = clampNumber(rect.height + padY * 2, 12, 100);
+        return {
+          left: clampNumber(rect.left - padX, 0, Math.max(100 - width, 0)),
+          top: clampNumber(rect.top - padY, 0, Math.max(100 - height, 0)),
+          width,
+          height,
+        };
+      }
+
+      function percentRectToCameraRect(rect, snapshot, padX = 4, padY = 6) {
+        return pctRect(
+          paddedPercentRect(rect, padX, padY),
+          snapshot.worldWidth,
+          snapshot.worldHeight,
+        );
+      }
+
+      function percentPointToCameraRect(point, snapshot) {
+        return percentRectToCameraRect(
+          {
+            left: point.left - 7,
+            top: point.top - 10,
+            width: 14,
+            height: 20,
+          },
+          snapshot,
+          0,
+          0,
+        );
+      }
+
+      function cameraZoomForRect(state, rect) {
+        const viewportWidth = Math.max(state.scene.scale.width * 0.82, 1);
+        const viewportHeight = Math.max(state.scene.scale.height * 0.8, 1);
+        return clampNumber(
+          Math.min(
+            viewportWidth / Math.max(rect.width, 64),
+            viewportHeight / Math.max(rect.height, 64),
+          ),
+          0.84,
+          2.35,
+        );
+      }
+
+      function resolveOfficeCameraTarget(snapshot) {
+        const targetKey = ui.cameraTargetKey;
+        if (targetKey.startsWith('service:')) {
+          const serviceId = targetKey.slice('service:'.length);
+          const placement = snapshot.workers.find(
+            (worker) => worker.service.serviceId === serviceId,
+          );
+          const actor = officeGame?.workerActors?.get(serviceId);
+          if (placement) {
+            return {
+              key: targetKey,
+              rect: percentPointToCameraRect(placement, snapshot),
+              followTarget: actor?.root || null,
+            };
+          }
+        }
+
+        if (targetKey.startsWith('team:')) {
+          const teamId = targetKey.slice('team:'.length);
+          const layout = snapshot.teamLayouts.find(
+            (entry) => entry.teamId === teamId,
+          );
+          if (layout) {
+            return {
+              key: targetKey,
+              rect: percentRectToCameraRect(layout, snapshot, 3.5, 5),
+            };
+          }
+        }
+
+        if (targetKey.startsWith('room:')) {
+          const roomId = targetKey.slice('room:'.length);
+          const room = snapshot.specialRooms.find((entry) => entry.id === roomId);
+          if (room) {
+            return {
+              key: targetKey,
+              rect: percentRectToCameraRect(room, snapshot, 4, 6),
+            };
+          }
+        }
+
+        if (ui.detailMode === 'team' && ui.selectedTeamId) {
+          const layout = snapshot.teamLayouts.find(
+            (entry) => entry.teamId === ui.selectedTeamId,
+          );
+          if (layout) {
+            return {
+              key: `team:${ui.selectedTeamId}`,
+              rect: percentRectToCameraRect(layout, snapshot, 3.5, 5),
+            };
+          }
+        }
+
+        if (ui.detailMode === 'room' && ui.selectedRoomId) {
+          const room = snapshot.specialRooms.find(
+            (entry) => entry.id === ui.selectedRoomId,
+          );
+          if (room) {
+            return {
+              key: `room:${ui.selectedRoomId}`,
+              rect: percentRectToCameraRect(room, snapshot, 4, 6),
+            };
+          }
+        }
+
+        if (ui.detailMode === 'desk') {
+          const roomId = roomIdForDesk(ui.activeDesk);
+          const room = snapshot.specialRooms.find((entry) => entry.id === roomId);
+          if (room) {
+            return {
+              key: `room:${roomId}`,
+              rect: percentRectToCameraRect(room, snapshot, 4, 6),
+            };
+          }
+        }
+
+        return null;
+      }
+
+      function syncOfficeCamera(state, snapshot, force = false) {
+        if (!state?.scene || !snapshot) return;
+        const camera = state.scene.cameras.main;
+
+        if (ui.cameraMode === 'overview') {
+          if (state.cameraStateKey !== 'overview' || force) {
+            camera.stopFollow();
+            fitOfficeCamera(state);
+            state.cameraStateKey = 'overview';
+          }
+          return;
+        }
+
+        const target = resolveOfficeCameraTarget(snapshot);
+        if (!target) {
+          camera.stopFollow();
+          fitOfficeCamera(state);
+          state.cameraStateKey = 'overview';
+          return;
+        }
+
+        const zoom = cameraZoomForRect(state, target.rect);
+        const centerX = target.rect.x + target.rect.width / 2;
+        const centerY = target.rect.y + target.rect.height / 2;
+        const shouldAnimate =
+          !force &&
+          Boolean(state.cameraStateKey) &&
+          state.cameraStateKey !== target.key;
+
+        if (target.followTarget) {
+          camera.startFollow(target.followTarget, true, 0.12, 0.12);
+        } else {
+          camera.stopFollow();
+        }
+
+        if (shouldAnimate) {
+          camera.zoomTo(zoom, 260, 'Quad.easeOut');
+          if (!target.followTarget) {
+            camera.pan(centerX, centerY, 260, 'Sine.easeOut');
+          }
+        } else {
+          camera.setZoom(zoom);
+          if (!target.followTarget) {
+            camera.centerOn(centerX, centerY);
+          }
+        }
+
+        state.cameraStateKey = target.key;
+      }
+
       function ensureOfficeGame() {
         const office = document.getElementById('office');
         if (!office) return null;
@@ -3347,6 +6775,7 @@
           mapLayers: [],
           worldWidth: 960,
           worldHeight: 576,
+          cameraStateKey: '',
           topLabel: null,
           topCopy: null,
           cornerNote: null,
@@ -3425,7 +6854,6 @@
               officeGame.roomLayer = this.add.container(0, 0).setDepth(110);
               officeGame.workerLayer = this.add.container(0, 0).setDepth(140);
               officeGame.mapLayout = extractTiledLayoutData(officeGame);
-              fitOfficeCamera(officeGame);
               syncOfficeGame();
             },
           },
@@ -3436,7 +6864,7 @@
           const width = Math.max(office.clientWidth, 640);
           const height = Math.max(office.clientHeight, 420);
           officeGame.game.scale.resize(width, height);
-          fitOfficeCamera(officeGame);
+          officeGame.cameraStateKey = '';
           syncOfficeGame();
         };
 
@@ -3476,7 +6904,8 @@
         if (!state.topLabel) {
           state.topLabel = enhanceText(
             scene.add.text(20, 16, '', {
-              fontFamily: 'IBM Plex Sans KR, "Apple SD Gothic Neo", sans-serif',
+              fontFamily:
+                'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif',
               fontSize: '16px',
               fontStyle: '700',
               color: '#f7d9a2',
@@ -3489,7 +6918,8 @@
         if (!state.topCopy) {
           state.topCopy = enhanceText(
             scene.add.text(20, 34, '', {
-              fontFamily: 'IBM Plex Mono, monospace',
+              fontFamily:
+                'ui-monospace, "SFMono-Regular", "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", Consolas, monospace',
               fontSize: '12px',
               color: '#9ab2bb',
             }),
@@ -3582,7 +7012,8 @@
           .setStrokeStyle(2, style.stroke, room.active ? 0.92 : 0.6);
         const title = enhanceText(
           scene.add.text(18, 14, compactRoomTitle(room), {
-            fontFamily: 'IBM Plex Sans KR, "Apple SD Gothic Neo", sans-serif',
+            fontFamily:
+              'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif',
             fontSize: '14px',
             fontStyle: '700',
             color: '#f6efdf',
@@ -3592,7 +7023,8 @@
         );
         const copy = enhanceText(
           scene.add.text(18, 33, compactRoomCopy(room), {
-            fontFamily: 'IBM Plex Mono, monospace',
+            fontFamily:
+              'ui-monospace, "SFMono-Regular", "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", Consolas, monospace',
             fontSize: '10px',
             color: '#9ab2bb',
             wordWrap: { width: Math.max(plaqueWidth - 36, 64) },
@@ -3609,7 +7041,8 @@
               18,
               room.kind === 'team' ? 'TEAM' : room.kind.toUpperCase(),
               {
-                fontFamily: 'IBM Plex Mono, monospace',
+                fontFamily:
+                  'ui-monospace, "SFMono-Regular", "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", Consolas, monospace',
                 fontSize: '8px',
                 color: '#dce9f3',
               },
@@ -3983,7 +7416,8 @@
         const name = enhanceText(
           scene.add
             .text(0, 24, service?.assistantName || serviceId, {
-              fontFamily: 'IBM Plex Sans KR, "Apple SD Gothic Neo", sans-serif',
+              fontFamily:
+                'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif',
               fontSize: '12px',
               fontStyle: '700',
               color: '#f6efdf',
@@ -3994,7 +7428,8 @@
         const meta = enhanceText(
           scene.add
             .text(0, 38, '', {
-              fontFamily: 'IBM Plex Mono, monospace',
+              fontFamily:
+                'ui-monospace, "SFMono-Regular", "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", Consolas, monospace',
               fontSize: '9px',
               color: '#93aab0',
               align: 'center',
@@ -4306,6 +7741,8 @@
           actor?.root?.destroy();
           state.workerActors.delete(serviceId);
         });
+
+        syncOfficeCamera(state, snapshot);
       }
 
       function renderDeskTabs(desk) {
@@ -4429,19 +7866,1047 @@
         if (!ui.data) return;
         const derived = ui.derived || emptyDerivedState();
         const company = companySettings();
+        const hero = selectedHeroProfile();
+        const syncedAt = new Date().toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
         const companyChip = company.companyName
           ? `<div class="hud-chip">${escapeHtml(company.companyName)}</div>`
           : '';
+        const partyChip = `<div class="hud-chip">party ${escapeHtml(
+          `${partyServices().length}/${Math.min(
+            PARTY_LIMIT,
+            Math.max(heroRosterServices().length, 1),
+          )}`,
+        )}</div>`;
+        const heroChip = hero
+          ? `<div class="hud-chip">${escapeHtml(
+              `${hero.service.assistantName} · ${hero.className}`,
+            )}</div>`
+          : '';
         const mapDeskActive =
           ui.detailMode === 'desk' && ui.activeDesk === 'map' ? 'active' : '';
+        const overviewModeActive = ui.cameraMode === 'overview' ? 'active' : '';
+        const focusModeActive = ui.cameraMode === 'focus' ? 'active' : '';
         document.getElementById('header-hud').innerHTML = `
           ${companyChip}
+          ${partyChip}
+          ${heroChip}
           <div class="hud-chip">${derived.runningServiceCount}/${derived.services.length} running</div>
           <div class="hud-chip">${derived.teams.length} teams</div>
           <div class="hud-chip">${derived.workingServiceCount} working now</div>
+          <div class="hud-chip">sync ${escapeHtml(syncedAt)}</div>
+          <button type="button" class="hud-chip-action ${overviewModeActive}" data-action="camera-overview">전체 뷰</button>
+          <button type="button" class="hud-chip-action ${focusModeActive}" data-action="camera-focus">포커스</button>
+          <button type="button" class="hud-chip-action ${ui.activeDesk === 'hr' && ui.activeTab === 'employees' ? 'active' : ''}" data-action="open-employees">직원 관리</button>
+          <button type="button" class="hud-chip-action ${ui.activeDesk === 'hr' && ui.activeTab === 'hiring' ? 'active' : ''}" data-action="open-hiring">직원 채용</button>
+          <button type="button" class="hud-chip-action ${ui.activeDesk === 'general' && ui.activeTab === 'team-layout' ? 'active' : ''}" data-action="open-team-layout">위치 변경</button>
           <button type="button" class="hud-chip-action ${mapDeskActive}" data-action="open-map-desk">맵 관리</button>
+          <button type="button" class="hud-chip-action" data-action="logout">로그아웃</button>
           ${renderCodexUsageHud()}
           <div class="hud-chip">${ui.data.web.host}:${ui.data.web.port}</div>
+        `;
+      }
+
+      function syncStageHeaderLayout() {
+        const header = document.querySelector('.stage-header');
+        if (!(header instanceof HTMLElement)) return;
+        if (!header.dataset.basePaddingBottom) {
+          header.dataset.basePaddingBottom = String(
+            Math.round(parseFloat(getComputedStyle(header).paddingBottom) || 0),
+          );
+        }
+        const basePaddingBottom = Number(header.dataset.basePaddingBottom) || 0;
+        header.style.height = '';
+        header.style.paddingBottom = `${basePaddingBottom}px`;
+        const overflow = Math.max(header.scrollHeight - header.clientHeight, 0);
+        header.style.paddingBottom = `${basePaddingBottom + overflow}px`;
+      }
+
+      function scheduleStageHeaderLayoutSync() {
+        requestAnimationFrame(() => {
+          syncStageHeaderLayout();
+        });
+      }
+
+      function currentFocusSummary() {
+        if (!ui.data) {
+          return {
+            kicker: 'Focus',
+            title: '운영 화면 로딩 중',
+            copy: '상태 데이터를 불러오는 중입니다.',
+          };
+        }
+
+        if (ui.detailMode === 'desk') {
+          const title =
+            ui.activeDesk === 'management'
+              ? '경영팀 작업대'
+              : ui.activeDesk === 'general'
+                ? '총무팀 작업대'
+                : ui.activeDesk === 'map'
+                  ? '맵 관리 작업대'
+                  : '인사팀 작업대';
+          const tab = TAB_DEFS.find((entry) => entry.id === ui.activeTab);
+          return {
+            kicker: 'Desk',
+            title,
+            copy: tab
+              ? `${tab.label} 패널이 열려 있습니다.`
+              : '운영 패널이 열려 있습니다.',
+          };
+        }
+
+        if (ui.detailMode === 'room' && ui.selectedRoomId) {
+          return {
+            kicker: 'Room',
+            title: roomLabel(ui.selectedRoomId),
+            copy: '선택된 운영 구역의 직원 배치와 패널을 확인 중입니다.',
+          };
+        }
+
+        const team = teamById(ui.selectedTeamId);
+        if (team) {
+          const serviceCount = teamChatServices(team.teamId).length;
+          return {
+            kicker: 'Team',
+            title: team.name,
+            copy: `${
+              displayLinkedChannelName(team.linkedChannelName, team.linkedJid) ||
+              '채널 미연결'
+            } · 직원 ${serviceCount}명`,
+          };
+        }
+
+        const service = serviceById(ui.selectedServiceId);
+        if (service) {
+          return {
+            kicker: 'Worker',
+            title: service.assistantName,
+            copy: `${service.serviceId} · ${titlePresence(service.presence)} · ${service.agentType}`,
+          };
+        }
+
+        return {
+          kicker: 'Focus',
+          title: '오피스 전체',
+          copy: '맵에서 팀이나 방을 선택하거나 운영 패널로 이동할 수 있습니다.',
+        };
+      }
+
+      function currentCameraTargetSummary() {
+        if (ui.cameraMode === 'overview') {
+          return '오피스 전체';
+        }
+
+        if (ui.cameraTargetKey.startsWith('service:')) {
+          const serviceId = ui.cameraTargetKey.slice('service:'.length);
+          return serviceById(serviceId)?.assistantName || '선택된 영웅';
+        }
+
+        if (ui.cameraTargetKey.startsWith('team:')) {
+          const teamId = ui.cameraTargetKey.slice('team:'.length);
+          return teamById(teamId)?.name || '선택된 팀';
+        }
+
+        if (ui.cameraTargetKey.startsWith('room:')) {
+          return roomLabel(ui.cameraTargetKey.slice('room:'.length));
+        }
+
+        return currentFocusSummary().title;
+      }
+
+      function renderNavigationJumpButton(kind, id, label) {
+        const active =
+          ui.cameraMode === 'focus' && ui.cameraTargetKey === `${kind}:${id}`
+            ? 'active'
+            : '';
+        return `
+          <button
+            type="button"
+            class="hud-chip-action ${active}"
+            data-action="camera-jump"
+            data-kind="${escapeHtml(kind)}"
+            data-id="${escapeHtml(id)}"
+          >
+            ${escapeHtml(label)}
+          </button>
+        `;
+      }
+
+      function buildSignalBoardEntries() {
+        const entries = [];
+        const raid = activeRaidEncounter();
+        if (raid) {
+          entries.push({
+            id: `raid:${raid.id}`,
+            badge: raid.tier,
+            title: `${raid.title} 교전 중`,
+            copy:
+              raid.bossHp > 0
+                ? `상황실에서 레이드를 추적 중입니다. 남은 HP ${raid.bossHp}/${raid.bossMaxHp}.`
+                : `${raid.reward} 회수 절차가 상황실에서 대기 중입니다.`,
+            targetKind: 'room',
+            targetId: 'ops',
+            targetLabel: roomLabel('ops'),
+          });
+        }
+
+        const activeObjective = buildCampaignObjectives().find(
+          (entry) => entry.accepted && !entry.completed,
+        );
+        if (activeObjective) {
+          entries.push({
+            id: `objective:${activeObjective.id}`,
+            badge: activeObjective.tier,
+            title: activeObjective.title,
+            copy: `${activeObjective.progress} · 총무 허브에서 다음 정리를 진행할 수 있습니다.`,
+            targetKind: 'room',
+            targetId: 'general',
+            targetLabel: roomLabel('general'),
+          });
+        }
+
+        const hotTeam = [...(ui.derived?.teams || [])]
+          .sort(
+            (left, right) =>
+              (right.activeServiceIds?.length || 0) -
+              (left.activeServiceIds?.length || 0),
+          )
+          .find((team) => (team.activeServiceIds?.length || 0) > 0);
+        if (hotTeam) {
+          entries.push({
+            id: `team:${hotTeam.teamId}`,
+            badge: `${hotTeam.activeServiceIds.length} active`,
+            title: `${hotTeam.name} 집중 구역`,
+            copy: `${hotTeam.memberServiceIds.length}명 중 ${hotTeam.activeServiceIds.length}명이 현재 작업 중입니다.`,
+            targetKind: 'team',
+            targetId: hotTeam.teamId,
+            targetLabel: hotTeam.name,
+          });
+        }
+
+        const offlineCount = (ui.derived?.services || []).filter(
+          (service) => service.presence === 'offline',
+        ).length;
+        if (offlineCount > 0) {
+          entries.push({
+            id: 'room:offsite',
+            badge: `${offlineCount} offline`,
+            title: '오프사이트 확인 필요',
+            copy: `${offlineCount}명의 워커가 HQ 밖에 있습니다. 복귀 상태를 확인하세요.`,
+            targetKind: 'room',
+            targetId: 'offsite',
+            targetLabel: roomLabel('offsite'),
+          });
+        }
+
+        const reserveHero = reserveServices()[0];
+        if (reserveHero && partyServices().length < PARTY_LIMIT) {
+          const profile = buildHeroProfile(reserveHero);
+          entries.push({
+            id: `reserve:${profile.service.serviceId}`,
+            badge: profile.className,
+            title: `${profile.displayName} 대기 중`,
+            copy: `${profile.formationRoleLabel} 슬롯 보강 후보입니다. 즉시 시야를 전환할 수 있습니다.`,
+            targetKind: 'service',
+            targetId: profile.service.serviceId,
+            targetLabel: profile.displayName,
+          });
+        }
+
+        if (!entries.length) {
+          entries.push({
+            id: 'stable:general',
+            badge: 'stable',
+            title: '긴급 신호 없음',
+            copy: '현재 HQ 흐름은 안정적입니다. 총무 허브에서 다음 목표를 고르세요.',
+            targetKind: 'room',
+            targetId: 'general',
+            targetLabel: roomLabel('general'),
+          });
+        }
+
+        return entries.slice(0, 4);
+      }
+
+      function renderStageOverview() {
+        const overview = document.getElementById('stage-overview');
+        if (!overview || !ui.data) return;
+        const focus = currentFocusSummary();
+        const hero = selectedHeroProfile();
+        const cameraTargetSummary = currentCameraTargetSummary();
+        const partyMarkup = partyServices()
+          .map((service, index) =>
+            renderPartyMemberCard(buildHeroProfile(service), index),
+          )
+          .join('');
+        const presetMarkup = partyPresets()
+          .map((preset, index) => renderPartyPresetCard(preset, index))
+          .join('');
+        const reserveMarkup = reserveServices()
+          .slice(0, 6)
+          .map((service) => renderReserveCard(buildHeroProfile(service)))
+          .join('');
+        const reserveQuickMarkup = reserveServices()
+          .slice(0, 3)
+          .map((service) => {
+            const profile = buildHeroProfile(service);
+            return `
+              <article class="party-quick-card">
+                <div class="party-quick-name">${escapeHtml(
+                  profile.displayName,
+                )}</div>
+                <div class="party-quick-meta">${escapeHtml(
+                  `${profile.className} · ${profile.formationRoleLabel}`,
+                )}</div>
+                <div class="party-controls">
+                  <button
+                    type="button"
+                    class="secondary small"
+                    data-action="select-hero"
+                    data-service-id="${escapeHtml(profile.service.serviceId)}"
+                  >
+                    미리보기
+                  </button>
+                  <button
+                    type="button"
+                    class="secondary small"
+                    data-action="toggle-party-member"
+                    data-service-id="${escapeHtml(profile.service.serviceId)}"
+                  >
+                    파티 편성
+                  </button>
+                </div>
+              </article>
+            `;
+          })
+          .join('');
+        const objectivesMarkup = buildCampaignObjectives()
+          .map(
+            (objective) => `
+              <article class="mission-card ${escapeHtml(objective.state)} ${objective.completed ? 'clear' : ''}">
+                <div class="mission-top">
+                  <div>
+                    <div class="mission-tier">${escapeHtml(objective.tier)}</div>
+                    <h3>${escapeHtml(objective.title)}</h3>
+                  </div>
+                  <span class="pill">${escapeHtml(
+                    objective.completed
+                      ? 'cleared'
+                      : objective.accepted
+                        ? 'active quest'
+                        : objective.stateLabel,
+                  )}</span>
+                </div>
+                <p>${escapeHtml(objective.copy)}</p>
+                <div class="hero-meter">
+                  <span style="width:${escapeHtml(
+                    String(objective.percent),
+                  )}%"></span>
+                </div>
+                <div class="mission-footer">
+                  <span>${escapeHtml(`${objective.progress} · ${objective.reward}`)}</span>
+                  <div class="party-controls">
+                    <button
+                      type="button"
+                      class="secondary mission-action"
+                      data-action="${escapeHtml(objective.action)}"
+                    >
+                      ${escapeHtml(objective.actionLabel)}
+                    </button>
+                    <button
+                      type="button"
+                      class="secondary mission-action"
+                      data-action="accept-objective"
+                      data-objective-id="${escapeHtml(objective.id)}"
+                    >
+                      ${objective.accepted ? '진행 중' : '수락'}
+                    </button>
+                    <button
+                      type="button"
+                      class="secondary mission-action"
+                      data-action="resolve-objective"
+                      data-objective-id="${escapeHtml(objective.id)}"
+                    >
+                      ${objective.completed ? '재확인' : '완료'}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            `,
+          )
+          .join('');
+        const systemsMarkup = buildCampaignSystems()
+          .map(
+            (system) => `
+              <article class="system-card">
+                <div class="system-card-top">
+                  <span>${escapeHtml(system.label)}</span>
+                  <strong>${escapeHtml(`${system.value}%`)}</strong>
+                </div>
+                <div class="hero-meter">
+                  <span style="width:${escapeHtml(
+                    String(system.value),
+                  )}%"></span>
+                </div>
+                <p>${escapeHtml(system.copy)}</p>
+              </article>
+            `,
+          )
+          .join('');
+        const ownedRelics = buildOwnedRelics();
+        const equippedRelics = ownedRelics.filter((relic) => relic.equipped);
+        const relicBonus = equippedRelicBonuses();
+        const savedRelicLoadouts = relicLoadouts().filter(
+          (loadout) => loadout.savedAt,
+        );
+        const relicMarkup = ownedRelics
+          .map((relic) => renderRelicCard(relic))
+          .join('');
+        const relicLoadoutMarkup = relicLoadouts()
+          .map((loadout, index) => renderRelicLoadoutCard(loadout, index))
+          .join('');
+        const raidMarkup = buildRaidEncounters()
+          .map((encounter) => renderRaidEncounterCard(encounter))
+          .join('');
+        const presetQuickMarkup = partyPresets()
+          .map((preset, index) => {
+            const savedCount = uniqueIds(preset.serviceIds || [])
+              .map((serviceId) => serviceById(serviceId))
+              .filter(Boolean).length;
+            return `
+              <article class="party-quick-card">
+                <div class="party-quick-name">${escapeHtml(
+                  `Squad ${index + 1}`,
+                )}</div>
+                <div class="party-quick-meta">${escapeHtml(
+                  `${preset.name} · ${savedCount}/${PARTY_LIMIT}`,
+                )}</div>
+                <div class="party-controls">
+                  <button
+                    type="button"
+                    class="secondary small"
+                    data-action="load-party-preset"
+                    data-preset-slot="${escapeHtml(preset.slotId)}"
+                  >
+                    불러오기
+                  </button>
+                  <button
+                    type="button"
+                    class="secondary small"
+                    data-action="save-party-preset"
+                    data-preset-slot="${escapeHtml(preset.slotId)}"
+                  >
+                    현재 파티 저장
+                  </button>
+                </div>
+              </article>
+            `;
+          })
+          .join('');
+        const chronicleMarkup = buildChronicleEntries(hero, focus)
+          .map(
+            (entry) => `
+              <article class="chronicle-item">
+                <div class="chronicle-label">${escapeHtml(entry.label)}</div>
+                <p>${escapeHtml(entry.copy)}</p>
+              </article>
+            `,
+          )
+          .join('');
+        const navigationPartyMarkup = partyServices()
+          .map((service) =>
+            renderNavigationJumpButton(
+              'service',
+              service.serviceId,
+              buildHeroProfile(service).displayName,
+            ),
+          )
+          .join('');
+        const navigationRoomMarkup = [
+          'management',
+          'general',
+          'hr',
+          'lounge',
+          'offsite',
+          'ops',
+        ]
+          .map((roomId) =>
+            renderNavigationJumpButton('room', roomId, roomLabel(roomId)),
+          )
+          .join('');
+        const navigationTeamMarkup = (ui.derived?.teams || [])
+          .slice(0, 5)
+          .map((team) =>
+            renderNavigationJumpButton('team', team.teamId, team.name),
+          )
+          .join('');
+        const signalMarkup = buildSignalBoardEntries()
+          .map(
+            (signal) => `
+              <article class="mission-card">
+                <div class="mission-top">
+                  <div>
+                    <div class="mission-tier">${escapeHtml(signal.badge)}</div>
+                    <h3>${escapeHtml(signal.title)}</h3>
+                  </div>
+                  <span class="pill">signal</span>
+                </div>
+                <p>${escapeHtml(signal.copy)}</p>
+                <div class="mission-footer">
+                  <span>${escapeHtml(signal.targetLabel || cameraTargetSummary)}</span>
+                  <div class="party-controls">
+                    <button
+                      type="button"
+                      class="secondary mission-action"
+                      data-action="camera-jump"
+                      data-kind="${escapeHtml(signal.targetKind)}"
+                      data-id="${escapeHtml(signal.targetId)}"
+                    >
+                      포커스
+                    </button>
+                  </div>
+                </div>
+              </article>
+            `,
+          )
+          .join('');
+        overview.innerHTML = `
+          <section class="overview-card party-board">
+            <div class="party-head">
+              <div class="party-head-copy">
+                <div class="overview-kicker">Party Select</div>
+                <h2>오피스 레이드 파티</h2>
+                <p>실제 RPG처럼 주력 멤버를 골라 빠르게 전환하고, 현재 포커스와 운영 상태를 한 화면에서 확인합니다.</p>
+              </div>
+              <div class="party-controls">
+                <div class="party-badge">${escapeHtml(
+                  `${partyServices().length}/${PARTY_LIMIT} active party`,
+                )}</div>
+                <button
+                  type="button"
+                  class="secondary small"
+                  data-action="open-team-management"
+                >
+                  팀 관리
+                </button>
+              </div>
+            </div>
+            <div class="party-quick-stack">
+              ${
+                reserveQuickMarkup
+                  ? `
+                    <div class="party-quick-block">
+                      <div class="party-section-head">
+                        <span>Quick Reserve</span>
+                        <span>${escapeHtml(
+                          `${reserveServices().length} ready swaps`,
+                        )}</span>
+                      </div>
+                      <div class="party-quick-grid">${reserveQuickMarkup}</div>
+                    </div>
+                  `
+                  : ''
+              }
+              <div class="party-quick-block">
+                <div class="party-section-head">
+                  <span>Squad Quick Save</span>
+                  <span>${escapeHtml(
+                    `${partyPresets().length} ready slots`,
+                  )}</span>
+                </div>
+                <div class="party-quick-grid">${presetQuickMarkup}</div>
+              </div>
+            </div>
+            ${
+              hero
+                ? `
+                  <div
+                    class="party-focus"
+                    style="--hero-accent:${escapeHtml(
+                      hero.primaryColor,
+                    )};--hero-accent-soft:${escapeHtml(hero.accentColor)};"
+                  >
+                    ${renderHeroPortrait(hero, 'large')}
+                    <div class="party-focus-copy">
+                      <div class="party-focus-kicker">${escapeHtml(
+                        `${focus.kicker} · ${hero.statusLabel}`,
+                      )}</div>
+                      <div class="party-focus-title">
+                        <h3>${escapeHtml(hero.displayName)}</h3>
+                        <div class="party-focus-role">${escapeHtml(
+                          `${hero.className} · Lv.${hero.level}`,
+                        )}</div>
+                      </div>
+                      <div class="hero-tag-row">
+                        ${hero.title ? `<span class="hero-tag">${escapeHtml(hero.title)}</span>` : ''}
+                        <span class="hero-tag">${escapeHtml(
+                          hero.formationRoleLabel,
+                        )}</span>
+                        <span class="hero-tag">${escapeHtml(
+                          hero.originLabel,
+                        )}</span>
+                      </div>
+                      <p>${escapeHtml(hero.stance)}</p>
+                      <p>${escapeHtml(
+                        `${focus.title} 기준으로 시야를 맞추고 있습니다. ${hero.summary}`,
+                      )}</p>
+                      <div class="hero-stat-grid">
+                        <div class="hero-stat-card">
+                          <div class="hero-stat-top">
+                            <span>HP</span>
+                            <strong>${escapeHtml(
+                              `${hero.hp}/${hero.maxHp}`,
+                            )}</strong>
+                          </div>
+                          <div class="hero-meter">
+                            <span style="width:${escapeHtml(
+                              String(Math.round((hero.hp / hero.maxHp) * 100)),
+                            )}%"></span>
+                          </div>
+                        </div>
+                        <div class="hero-stat-card">
+                          <div class="hero-stat-top">
+                            <span>MP</span>
+                            <strong>${escapeHtml(
+                              `${hero.mp}/${hero.maxMp}`,
+                            )}</strong>
+                          </div>
+                          <div class="hero-meter">
+                            <span style="width:${escapeHtml(
+                              String(Math.round((hero.mp / hero.maxMp) * 100)),
+                            )}%"></span>
+                          </div>
+                        </div>
+                        <div class="hero-stat-card">
+                          <div class="hero-stat-top">
+                            <span>Sync</span>
+                            <strong>${escapeHtml(`${hero.sync}%`)}</strong>
+                          </div>
+                          <div class="hero-meter">
+                            <span style="width:${escapeHtml(
+                              String(hero.sync),
+                            )}%"></span>
+                          </div>
+                        </div>
+                        <div class="hero-stat-card">
+                          <div class="hero-stat-top">
+                            <span>Focus</span>
+                            <strong>${escapeHtml(
+                              `${hero.focus}/${hero.guard}/${hero.speed}`,
+                            )}</strong>
+                          </div>
+                          <div class="hero-meter">
+                            <span style="width:${escapeHtml(
+                              String(
+                                Math.round(
+                                  (hero.focus + hero.guard + hero.speed) / 3,
+                                ),
+                              ),
+                            )}%"></span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="hero-tag-row">
+                        <span class="hero-tag">${escapeHtml(
+                          ui.cameraMode === 'focus'
+                            ? 'Camera Focus'
+                            : 'Camera Overview',
+                        )}</span>
+                        <span class="hero-tag">F focus</span>
+                        <span class="hero-tag">0 overview</span>
+                        ${hero.tags
+                          .map(
+                            (tag) =>
+                              `<span class="hero-tag">${escapeHtml(tag)}</span>`,
+                          )
+                          .join('')}
+                        <span class="hero-tag">${escapeHtml(
+                          `${hero.teamLabel}${hero.extraTeamLabel ? ` ${hero.extraTeamLabel}` : ''}`,
+                        )}</span>
+                      </div>
+                      <div class="hero-actions">
+                        <button
+                          type="button"
+                          class="secondary small"
+                          data-action="hero-skill"
+                          data-skill="scout"
+                        >
+                          정찰
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary small"
+                          data-action="hero-skill"
+                          data-skill="brief"
+                        >
+                          브리핑
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary small"
+                          data-action="hero-skill"
+                          data-skill="fortify"
+                        >
+                          방어
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary small"
+                          data-action="hero-skill"
+                          data-skill="celebrate"
+                        >
+                          사기 충전
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary small"
+                          data-action="select-service"
+                          data-service-id="${escapeHtml(hero.service.serviceId)}"
+                        >
+                          상세 열기
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary small"
+                          data-action="toggle-party-member"
+                          data-service-id="${escapeHtml(hero.service.serviceId)}"
+                        >
+                          ${
+                            ui.heroPartyServiceIds.includes(hero.service.serviceId)
+                              ? '파티 해제'
+                              : '파티 편성'
+                          }
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary small"
+                          data-action="open-team-layout"
+                        >
+                          HQ 배치 보기
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary small"
+                          data-action="open-temperaments"
+                        >
+                          컬쳐핏
+                        </button>
+                      </div>
+                      <form class="stack" id="hero-customization-form">
+                        <input
+                          type="hidden"
+                          name="serviceId"
+                          value="${escapeHtml(hero.service.serviceId)}"
+                        />
+                        <div class="field-grid">
+                          <div class="field">
+                            <label>캐릭터 이름</label>
+                            <input
+                              name="alias"
+                              value="${escapeHtml(hero.customization.alias || '')}"
+                              placeholder="${escapeHtml(
+                                hero.service.assistantName,
+                              )}"
+                            />
+                          </div>
+                          <div class="field">
+                            <label>칭호</label>
+                            <input
+                              name="title"
+                              value="${escapeHtml(hero.customization.title || '')}"
+                              placeholder="예: Tower Vanguard"
+                            />
+                          </div>
+                        </div>
+                        <div class="field-grid">
+                          <div class="field">
+                            <label>포지션</label>
+                            <select name="formationRole">
+                              ${['vanguard', 'support', 'scout', 'anchor']
+                                .map((role) => {
+                                  const selected =
+                                    hero.formationRole === role ? 'selected' : '';
+                                  return `<option value="${escapeHtml(
+                                    role,
+                                  )}" ${selected}>${escapeHtml(
+                                    formationRoleLabel(role),
+                                  )}</option>`;
+                                })
+                                .join('')}
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label>테마 컬러</label>
+                            <select name="theme">
+                              ${COLOR_OPTIONS.map((color) => {
+                                const selected =
+                                  hero.accentColor === color ? 'selected' : '';
+                                return `<option value="${escapeHtml(
+                                  color,
+                                )}" ${selected}>${escapeHtml(color)}</option>`;
+                              }).join('')}
+                            </select>
+                          </div>
+                        </div>
+                        <div class="field">
+                          <label>대사 / 설명</label>
+                          <textarea
+                            name="motto"
+                            placeholder="캐릭터 분위기나 역할 설명"
+                          >${escapeHtml(hero.customization.motto || '')}</textarea>
+                        </div>
+                        <div class="button-row">
+                          <button type="submit">캐릭터 저장</button>
+                          <button
+                            type="button"
+                            class="secondary"
+                            data-action="reset-hero-customization"
+                            data-service-id="${escapeHtml(hero.service.serviceId)}"
+                          >
+                            기본값 복구
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                `
+                : '<div class="empty">직원이 아직 없어 파티를 구성할 수 없습니다.</div>'
+            }
+            <div class="party-section-head">
+              <span>Active Members</span>
+              <div class="party-controls">
+                <button type="button" class="secondary small" data-action="cycle-hero" data-direction="-1">Prev</button>
+                <button type="button" class="secondary small" data-action="cycle-hero" data-direction="1">Next</button>
+              </div>
+            </div>
+            <div class="party-grid">
+              ${partyMarkup || '<div class="empty">파티에 배정된 캐릭터가 없습니다.</div>'}
+            </div>
+            <div class="reserve-board">
+              <div class="party-section-head">
+                <span>Reserve Roster</span>
+                <span>${escapeHtml(
+                  `${reserveServices().length} waiting`,
+                )}</span>
+              </div>
+              <div class="reserve-grid">
+                ${reserveMarkup || '<div class="empty">예비 캐릭터가 없습니다.</div>'}
+              </div>
+            </div>
+            <div class="preset-board">
+              <div class="party-section-head">
+                <span>Squad Memory</span>
+                <span>${escapeHtml(`${partyPresets().length} saved layouts`)}</span>
+              </div>
+              <div class="preset-grid">
+                ${presetMarkup}
+              </div>
+            </div>
+          </section>
+          <div class="rpg-side-stack">
+            <section class="rpg-panel">
+              <div class="rpg-panel-head">
+                <div>
+                  <div class="overview-kicker">Raid Terminal</div>
+                  <h2>보스 레이드</h2>
+                  <p>저장한 파티를 즉시 불러와 보스를 공략하고 길드 보상을 회수할 수 있는 실제 진행 루프입니다.</p>
+                </div>
+              </div>
+              <div class="mission-list">${raidMarkup}</div>
+            </section>
+            <section class="rpg-panel">
+              <div class="rpg-panel-head">
+                <div>
+                  <div class="overview-kicker">Relic Vault</div>
+                  <h2>렐릭 금고</h2>
+                  <p>레이드 보상은 영구 장비로 남아 파티 전투력과 HQ 보정 수치를 계속 밀어줍니다.</p>
+                </div>
+                <div class="party-badge">${escapeHtml(
+                  `${ownedRelics.length}/${RAID_RELIC_DEFS.length} unlocked`,
+                )}</div>
+              </div>
+              <div class="relic-summary">
+                <article class="system-card">
+                  <div class="system-card-top">
+                    <span>Equipped</span>
+                    <strong>${escapeHtml(
+                      `${equippedRelics.length}/${RELIC_EQUIP_LIMIT}`,
+                    )}</strong>
+                  </div>
+                  <div class="hero-meter">
+                    <span style="width:${escapeHtml(
+                      String(
+                        Math.round(
+                          (equippedRelics.length / RELIC_EQUIP_LIMIT) * 100,
+                        ),
+                      ),
+                    )}%"></span>
+                  </div>
+                  <p>${escapeHtml(
+                    equippedRelics.length
+                      ? `${equippedRelics.map((relic) => relic.title).join(' · ')} 장착 중`
+                      : '아직 장착된 렐릭이 없습니다.',
+                  )}</p>
+                </article>
+                <article class="system-card">
+                  <div class="system-card-top">
+                    <span>Raid Charge</span>
+                    <strong>${escapeHtml(
+                      `+${raidState().relicCharge || 0}`,
+                    )}</strong>
+                  </div>
+                  <div class="hero-meter">
+                    <span style="width:${escapeHtml(
+                      String(
+                        clampNumber((raidState().relicCharge || 0) * 20, 0, 100),
+                      ),
+                    )}%"></span>
+                  </div>
+                  <p>${escapeHtml(
+                    equippedRelics.length
+                      ? `현재 장착 보정 power +${relicBonus.power} · sync +${relicBonus.sync} · morale +${relicBonus.morale}`
+                      : '레이드 보상을 회수하면 장기 전투 보정이 켜집니다.',
+                  )}</p>
+                </article>
+                <article class="system-card">
+                  <div class="system-card-top">
+                    <span>Relic Memory</span>
+                    <strong>${escapeHtml(
+                      `${savedRelicLoadouts.length}/${relicLoadouts().length}`,
+                    )}</strong>
+                  </div>
+                  <div class="hero-meter">
+                    <span style="width:${escapeHtml(
+                      String(
+                        Math.round(
+                          (savedRelicLoadouts.length /
+                            Math.max(relicLoadouts().length, 1)) *
+                            100,
+                        ),
+                      ),
+                    )}%"></span>
+                  </div>
+                  <p>${escapeHtml(
+                    savedRelicLoadouts.length
+                      ? `${savedRelicLoadouts.map((loadout) => loadout.name).join(' · ')} 저장 완료`
+                      : '전투 중 세팅을 즉시 되돌릴 수 있도록 렐릭 메모리를 남기세요.',
+                  )}</p>
+                </article>
+              </div>
+              <div class="preset-board" style="margin-top:12px;">
+                <div class="party-section-head">
+                  <span>Relic Memory</span>
+                  <span>${escapeHtml(
+                    `${savedRelicLoadouts.length}/${relicLoadouts().length} saved loadouts`,
+                  )}</span>
+                </div>
+                <div class="preset-grid">
+                  ${relicLoadoutMarkup}
+                </div>
+              </div>
+              <div class="relic-grid">
+                ${
+                  relicMarkup ||
+                  '<div class="empty">아직 보관된 렐릭이 없습니다. 레이드를 정리하면 영구 장비가 해금됩니다.</div>'
+                }
+              </div>
+            </section>
+            <section class="rpg-panel">
+              <div class="rpg-panel-head">
+                <div>
+                  <div class="overview-kicker">Mission Board</div>
+                  <h2>현재 퀘스트</h2>
+                  <p>실제 운영 데이터를 바탕으로 다음에 밀어야 할 목표를 RPG 퀘스트처럼 정리했습니다.</p>
+                </div>
+              </div>
+              <div class="mission-list">${objectivesMarkup}</div>
+            </section>
+            <section class="rpg-panel">
+              <div class="rpg-panel-head">
+                <div>
+                  <div class="overview-kicker">Systems</div>
+                  <h2>길드 상태판</h2>
+                  <p>사기, 동기화, 위협도, 길드 규모를 묶어서 현재 HQ의 컨디션을 보여줍니다.</p>
+                </div>
+              </div>
+              <div class="system-list">${systemsMarkup}</div>
+            </section>
+            <section class="rpg-panel">
+              <div class="rpg-panel-head">
+                <div>
+                  <div class="overview-kicker">Navigator</div>
+                  <h2>오피스 항로</h2>
+                  <p>파티, 팀, HQ 거점을 JRPG 월드맵처럼 빠르게 훑으며 카메라 고정을 즉시 바꿉니다.</p>
+                </div>
+              </div>
+              <div class="stack">
+                <div class="note">현재 고정: ${escapeHtml(cameraTargetSummary)} · ${escapeHtml(
+                  ui.cameraMode === 'focus' ? '포커스' : '전체 뷰',
+                )}</div>
+                <div class="field">
+                  <label>파티 점프</label>
+                  <div class="button-row">
+                    ${navigationPartyMarkup || '<div class="empty">파티 멤버를 먼저 편성하세요.</div>'}
+                  </div>
+                </div>
+                <div class="field">
+                  <label>HQ 거점</label>
+                  <div class="button-row">
+                    ${navigationRoomMarkup}
+                  </div>
+                </div>
+                <div class="field">
+                  <label>팀 링크</label>
+                  <div class="button-row">
+                    ${navigationTeamMarkup || '<div class="empty">이동할 팀이 없습니다.</div>'}
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="rpg-panel">
+              <div class="rpg-panel-head">
+                <div>
+                  <div class="overview-kicker">Signal Board</div>
+                  <h2>상황 신호</h2>
+                  <p>레이드, 퀘스트, 팀 과열, 오프사이트 상태를 모아 지금 바로 봐야 할 구역을 압축합니다.</p>
+                </div>
+              </div>
+              <div class="mission-list">${signalMarkup}</div>
+            </section>
+            <section class="rpg-panel">
+              <div class="rpg-panel-head">
+                <div>
+                  <div class="overview-kicker">Chronicle</div>
+                  <h2>현장 기록</h2>
+                  <p>포커스, 파티, 맵 상태를 빠르게 읽고 즉시 조작할 수 있는 HUD 로그입니다.</p>
+                </div>
+              </div>
+              <div class="chronicle-list">${chronicleMarkup}</div>
+              <div class="hotkey-grid">
+                <div class="hotkey-chip"><kbd>1-4</kbd><span>파티 선택</span></div>
+                <div class="hotkey-chip"><kbd>0</kbd><span>전체 뷰</span></div>
+                <div class="hotkey-chip"><kbd>[ ]</kbd><span>다음 영웅</span></div>
+                <div class="hotkey-chip"><kbd>F</kbd><span>포커스</span></div>
+                <div class="hotkey-chip"><kbd>Q</kbd><span>팀 관리</span></div>
+                <div class="hotkey-chip"><kbd>W</kbd><span>직원 관리</span></div>
+                <div class="hotkey-chip"><kbd>E</kbd><span>직원 채용</span></div>
+                <div class="hotkey-chip"><kbd>R</kbd><span>위치 변경</span></div>
+                <div class="hotkey-chip"><kbd>M</kbd><span>맵 관리</span></div>
+              </div>
+              <div class="button-row" style="margin-top:12px;">
+                <button
+                  type="button"
+                  class="secondary small"
+                  data-action="reset-campaign-state"
+                >
+                  캠페인 로그 초기화
+                </button>
+              </div>
+            </section>
+          </div>
         `;
       }
 
@@ -5149,7 +9614,8 @@
         const assignedTemperament = temperamentById(
           selectedService?.config?.temperamentId || 'normal',
         );
-        const employeeCards = nonDashboardServices()
+        const filteredServices = filteredNonDashboardServices();
+        const employeeCards = filteredServices
           .map((service) => {
             const active =
               service.serviceId === ui.selectedServiceId ? 'active' : '';
@@ -5174,6 +9640,9 @@
             `;
           })
           .join('');
+        const filterSummary = ui.employeeFilterQuery.trim()
+          ? `검색 결과 ${filteredServices.length} / ${nonDashboardServices().length}`
+          : `대상 직원 ${nonDashboardServices().length}`;
 
         const assignmentForm = selectedService
           ? `
@@ -5223,6 +9692,16 @@
             <h2>성향 주입</h2>
           </div>
           <div class="stack">
+            <div class="field">
+              <label>직원 검색</label>
+              <input
+                type="search"
+                value="${escapeHtml(ui.employeeFilterQuery)}"
+                placeholder="이름, serviceId, 팀, role, 상태"
+                data-employee-filter-input
+              />
+              <div class="note">${escapeHtml(filterSummary)}</div>
+            </div>
             <div class="card-list">
               ${employeeCards || '<div class="empty">직원이 없습니다.</div>'}
             </div>
@@ -5333,7 +9812,8 @@
 
       function renderEmployeesPanel() {
         const selectedService = serviceById(ui.selectedServiceId);
-        const employeeCards = manageableServices()
+        const filteredServices = filteredManageableServices();
+        const employeeCards = filteredServices
           .map((service) => {
             const active =
               service.serviceId === ui.selectedServiceId ? 'active' : '';
@@ -5373,6 +9853,9 @@
               .map((team) => team.name)
               .join(', ') || 'Unassigned'
           : '';
+        const filterSummary = ui.employeeFilterQuery.trim()
+          ? `검색 결과 ${filteredServices.length} / ${manageableServices().length}`
+          : `전체 직원 ${manageableServices().length}`;
 
         const editForm = selectedService
           ? `
@@ -5474,6 +9957,16 @@
             <h2>직원 관리</h2>
           </div>
           <div class="stack">
+            <div class="field">
+              <label>직원 검색</label>
+              <input
+                type="search"
+                value="${escapeHtml(ui.employeeFilterQuery)}"
+                placeholder="이름, serviceId, 팀, role, 상태"
+                data-employee-filter-input
+              />
+              <div class="note">${escapeHtml(filterSummary)}</div>
+            </div>
             ${selectedService ? `${editForm}${employeeList}` : `${employeeList}${editForm}`}
             ${renderServiceLogsSection(selectedService)}
             ${renderEmployeeChatSection(selectedService)}
@@ -5842,9 +10335,15 @@
 
       function render() {
         const company = companySettings();
+        const stageKicker = document.getElementById('stage-kicker');
+        if (stageKicker) {
+          stageKicker.textContent = company.officeTitle
+            ? 'Live Guild Control'
+            : 'HKClaw Guild Console';
+        }
         const stageTitle = document.getElementById('stage-title');
         if (stageTitle) {
-          stageTitle.textContent = company.companyName || '';
+          stageTitle.textContent = company.companyName || 'HKClaw Office';
         }
         const stageCopy = document.getElementById('stage-copy');
         if (stageCopy) {
@@ -5852,10 +10351,13 @@
             company.officeTitle,
             company.officeSubtitle,
           ].filter(Boolean);
-          stageCopy.textContent = stageCopyParts.join(' · ');
+          stageCopy.textContent =
+            stageCopyParts.join(' · ') ||
+            '팀과 워커, 맵 운영 상태를 하나의 올드스쿨 레이드 HUD처럼 정리하는 관리자 콘솔입니다.';
         }
         document.title = company.companyName || 'Office Admin';
         renderHeaderHud();
+        renderStageOverview();
         renderOffice();
         renderDetailPanel();
         const detailPanel = document.getElementById('detail-panel');
@@ -5867,6 +10369,7 @@
         if (detailPanel) {
           syncDiscordChannelInputs(detailPanel);
         }
+        scheduleStageHeaderLayoutSync();
       }
 
       function buildServicePayload(form) {
@@ -6214,8 +10717,55 @@
 
         const action = target.dataset.action;
         try {
+          if (action === 'camera-overview') {
+            setCameraMode('overview');
+            return;
+          }
+
+          if (action === 'camera-focus') {
+            setCameraMode('focus');
+            return;
+          }
+
+          if (action === 'camera-jump') {
+            jumpCameraTarget(target.dataset.kind, target.dataset.id);
+            return;
+          }
+
           if (action === 'open-map-desk') {
             openMapDesk('map-upload');
+            return;
+          }
+
+          if (action === 'open-team-management') {
+            openManagementDesk('team-management');
+            return;
+          }
+
+          if (action === 'open-employees') {
+            openHrDesk('employees');
+            return;
+          }
+
+          if (action === 'open-hiring') {
+            openHrDesk('hiring');
+            return;
+          }
+
+          if (action === 'open-temperaments') {
+            openTemperamentDesk('temperaments');
+            return;
+          }
+
+          if (action === 'open-team-layout') {
+            openGeneralDesk('team-layout');
+            return;
+          }
+
+          if (action === 'logout') {
+            target.disabled = true;
+            await api('/api/admin/logout', { method: 'POST' });
+            window.location.href = '/login';
             return;
           }
 
@@ -6249,6 +10799,91 @@
 
           if (action === 'manage-team') {
             manageTeam(target.dataset.teamId);
+            return;
+          }
+
+          if (action === 'select-hero') {
+            selectHero(target.dataset.serviceId);
+            return;
+          }
+
+          if (action === 'toggle-party-member') {
+            togglePartyMember(target.dataset.serviceId);
+            return;
+          }
+
+          if (action === 'save-party-preset') {
+            savePartyPreset(target.dataset.presetSlot);
+            return;
+          }
+
+          if (action === 'load-party-preset') {
+            loadPartyPreset(target.dataset.presetSlot);
+            return;
+          }
+
+          if (action === 'save-relic-loadout') {
+            saveRelicLoadout(target.dataset.loadoutSlot);
+            return;
+          }
+
+          if (action === 'load-relic-loadout') {
+            loadRelicLoadout(target.dataset.loadoutSlot);
+            return;
+          }
+
+          if (action === 'hero-skill') {
+            triggerHeroAction(target.dataset.skill);
+            return;
+          }
+
+          if (action === 'begin-raid') {
+            beginRaid(target.dataset.encounterId);
+            return;
+          }
+
+          if (action === 'raid-command') {
+            executeRaidCommand(target.dataset.command);
+            return;
+          }
+
+          if (action === 'claim-raid-loot') {
+            claimRaidLoot();
+            return;
+          }
+
+          if (action === 'equip-relic') {
+            equipRelic(target.dataset.relicId);
+            return;
+          }
+
+          if (action === 'unequip-relic') {
+            unequipRelic(target.dataset.relicId);
+            return;
+          }
+
+          if (action === 'accept-objective') {
+            acceptObjective(target.dataset.objectiveId);
+            return;
+          }
+
+          if (action === 'resolve-objective') {
+            resolveObjective(target.dataset.objectiveId);
+            return;
+          }
+
+          if (action === 'reset-hero-customization') {
+            resetHeroCustomization(target.dataset.serviceId);
+            return;
+          }
+
+          if (action === 'reset-campaign-state') {
+            resetCampaignState();
+            return;
+          }
+
+          if (action === 'cycle-hero') {
+            cycleHero(Number(target.dataset.direction || 1));
             return;
           }
 
@@ -6414,8 +11049,16 @@
       document.addEventListener('input', (event) => {
         const target = event.target;
         if (!(target instanceof HTMLInputElement)) return;
-        if (!target.matches('[data-discord-channel-input]')) return;
-        applyDiscordChannelInputState(target);
+        if (target.matches('[data-discord-channel-input]')) {
+          applyDiscordChannelInputState(target);
+          return;
+        }
+        if (target.matches('[data-employee-filter-input]')) {
+          ui.employeeFilterQuery = target.value;
+          if (ui.activeDesk === 'hr') {
+            renderDetailPanel();
+          }
+        }
       });
 
       document.addEventListener(
@@ -6478,6 +11121,10 @@
           }
           if (form.id === 'team-chat-form') {
             await handleChatSubmit(form);
+            return;
+          }
+          if (form.id === 'hero-customization-form') {
+            await handleHeroCustomizationSubmit(form);
           }
         } catch (error) {
           showToast(error.message || '저장에 실패했습니다.', 'error');
@@ -6487,6 +11134,78 @@
         } finally {
           setFormBusy(form, false, submitter);
         }
+      });
+
+      function isInteractiveField(element) {
+        return (
+          element instanceof HTMLElement &&
+          (element.isContentEditable ||
+            ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName))
+        );
+      }
+
+      window.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented) return;
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        if (isInteractiveField(document.activeElement)) return;
+
+        if (/^[1-4]$/.test(event.key)) {
+          const index = Number(event.key) - 1;
+          const party = partyServices();
+          const service = party[index];
+          if (service) {
+            event.preventDefault();
+            selectHero(service.serviceId);
+          }
+          return;
+        }
+
+        if (event.key === '0') {
+          event.preventDefault();
+          setCameraMode('overview');
+          return;
+        }
+
+        if (event.key === '[' || event.key === ']') {
+          event.preventDefault();
+          cycleHero(event.key === '[' ? -1 : 1);
+          return;
+        }
+
+        const lowered = event.key.toLowerCase();
+        if (lowered === 'f') {
+          event.preventDefault();
+          setCameraMode('focus');
+          return;
+        }
+        if (lowered === 'q') {
+          event.preventDefault();
+          openManagementDesk('team-management');
+          return;
+        }
+        if (lowered === 'w') {
+          event.preventDefault();
+          openHrDesk('employees');
+          return;
+        }
+        if (lowered === 'e') {
+          event.preventDefault();
+          openHrDesk('hiring');
+          return;
+        }
+        if (lowered === 'r') {
+          event.preventDefault();
+          openGeneralDesk('team-layout');
+          return;
+        }
+        if (lowered === 'm') {
+          event.preventDefault();
+          openMapDesk('map-upload');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        scheduleStageHeaderLayoutSync();
       });
 
       async function boot() {

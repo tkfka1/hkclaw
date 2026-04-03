@@ -1,12 +1,30 @@
 import http from 'http';
+import {
+  createHash,
+  randomBytes,
+  scryptSync,
+  timingSafeEqual,
+} from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
 import { z } from 'zod';
 
 import { InvalidAdminInputError } from './admin-errors.js';
+import { getEnv } from './env.js';
 import { logger } from './logger.js';
 import { readAdminMapState, uploadAdminMapAssets } from './admin-map-assets.js';
+import {
+  countAdminUsers,
+  createAdminSession,
+  deleteAdminSessionByTokenHash,
+  deleteExpiredAdminSessions,
+  getAdminSessionByTokenHash,
+  getAdminUserByUsername,
+  touchAdminSession,
+  touchAdminUserLogin,
+  upsertAdminUser,
+} from './db.js';
 import {
   renderAdminGamePage,
   renderAdminPhaserBundle,
@@ -165,6 +183,11 @@ const adminChatSchema = z.object({
   message: z.string().min(1),
 });
 
+const adminLoginSchema = z.object({
+  username: z.string().trim().min(1),
+  password: z.string().min(1),
+});
+
 const uploadedFileSchema = z.object({
   name: z.string().min(1),
   contentBase64: z.string().min(1),
@@ -178,6 +201,176 @@ const mapUploadSchema = z.object({
 
 let adminServer: http.Server | null = null;
 
+const ADMIN_SESSION_COOKIE = 'hkclaw_admin_session';
+const ADMIN_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
+const ADMIN_PASSWORD_HASH_PREFIX = 'scrypt';
+
+export interface AdminBootstrapConfig {
+  username: string;
+  password: string;
+}
+
+export function getAdminBootstrapConfig(input?: {
+  username?: string;
+  password?: string;
+}): AdminBootstrapConfig | null {
+  const password = (input?.password ?? getEnv('HKCLAW_ADMIN_PASSWORD') ?? '').trim();
+  if (!password) return null;
+
+  const username = (input?.username ?? getEnv('HKCLAW_ADMIN_USERNAME') ?? 'admin').trim();
+  return {
+    username: username || 'admin',
+    password,
+  };
+}
+
+export function hashAdminPassword(password: string, salt = randomBytes(16).toString('hex')): string {
+  const digest = scryptSync(password, salt, 64).toString('hex');
+  return [ADMIN_PASSWORD_HASH_PREFIX, salt, digest].join('$');
+}
+
+export function verifyAdminPassword(
+  password: string,
+  storedHash: string,
+): boolean {
+  const [scheme, salt, expectedDigest] = storedHash.split('$');
+  if (scheme !== ADMIN_PASSWORD_HASH_PREFIX || !salt || !expectedDigest) {
+    return false;
+  }
+
+  const actualDigest = scryptSync(password, salt, 64).toString('hex');
+  return secureEqual(actualDigest, expectedDigest);
+}
+
+function secureEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+  return timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function hashAdminSessionToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function parseCookieHeader(header: string | undefined): Record<string, string> {
+  const result: Record<string, string> = {};
+  if (!header) return result;
+
+  for (const chunk of header.split(';')) {
+    const trimmed = chunk.trim();
+    if (!trimmed) continue;
+    const separator = trimmed.indexOf('=');
+    if (separator === -1) continue;
+    const key = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+    if (!key) continue;
+    try {
+      result[key] = decodeURIComponent(value);
+    } catch {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+function buildSessionCookie(token: string, expiresAt: string): string {
+  const expires = new Date(expiresAt).toUTCString();
+  return (
+    `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Expires=${expires}`
+  );
+}
+
+function buildExpiredSessionCookie(): string {
+  return `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+}
+
+function ensureBootstrapAdminUser(): void {
+  const bootstrap = getAdminBootstrapConfig();
+  if (!bootstrap) return;
+  const existingUser = getAdminUserByUsername(bootstrap.username);
+  if (
+    existingUser &&
+    verifyAdminPassword(bootstrap.password, existingUser.password_hash)
+  ) {
+    return;
+  }
+
+  upsertAdminUser({
+    username: bootstrap.username,
+    passwordHash: hashAdminPassword(bootstrap.password),
+  });
+}
+
+function hasConfiguredAdminAccess(): boolean {
+  ensureBootstrapAdminUser();
+  return countAdminUsers() > 0;
+}
+
+export function isPublicAdminRoute(method: string, pathname: string): boolean {
+  return (
+    (method === 'GET' &&
+      (pathname === '/healthz' ||
+        pathname === '/favicon.ico' ||
+        pathname === '/login' ||
+        pathname === '/vendor/phaser.min.js')) ||
+    (method === 'POST' &&
+      (pathname === '/api/admin/login' || pathname === '/api/admin/logout'))
+  );
+}
+
+export function getAdminSessionTokenFromCookie(
+  header: string | undefined,
+): string | null {
+  const cookies = parseCookieHeader(header);
+  const token = cookies[ADMIN_SESSION_COOKIE];
+  return token ? token.trim() || null : null;
+}
+
+export function isAuthorizedAdminRequest(header: string | undefined): boolean {
+  if (!hasConfiguredAdminAccess()) {
+    return false;
+  }
+
+  deleteExpiredAdminSessions();
+  const token = getAdminSessionTokenFromCookie(header);
+  if (!token) return false;
+
+  const session = getAdminSessionByTokenHash(hashAdminSessionToken(token));
+  if (!session) return false;
+  if (session.expires_at <= new Date().toISOString()) {
+    deleteAdminSessionByTokenHash(session.token_hash);
+    return false;
+  }
+
+  touchAdminSession(session.id);
+  return true;
+}
+
+function authenticateAdminLogin(input: {
+  username: string;
+  password: string;
+}): { token: string; expiresAt: string } | null {
+  ensureBootstrapAdminUser();
+  const user = getAdminUserByUsername(input.username);
+  if (!user) return null;
+  if (!verifyAdminPassword(input.password, user.password_hash)) {
+    return null;
+  }
+
+  const token = randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + ADMIN_SESSION_TTL_MS).toISOString();
+  createAdminSession({
+    userId: user.id,
+    tokenHash: hashAdminSessionToken(token),
+    expiresAt,
+  });
+  touchAdminUserLogin(user.id);
+  return { token, expiresAt };
+}
+
 function sendJson(
   res: http.ServerResponse,
   statusCode: number,
@@ -190,6 +383,317 @@ function sendJson(
     'content-length': Buffer.byteLength(body),
   });
   res.end(body);
+}
+
+function sendAuthRequired(res: http.ServerResponse): void {
+  const body = JSON.stringify({ error: 'Authentication required' });
+  res.writeHead(401, {
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
+    'content-length': Buffer.byteLength(body),
+    'set-cookie': buildExpiredSessionCookie(),
+  });
+  res.end(body);
+}
+
+function sendHtmlPage(
+  res: http.ServerResponse,
+  statusCode: number,
+  html: string,
+): void {
+  res.writeHead(statusCode, {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'no-store',
+  });
+  res.end(html);
+}
+
+export function renderLoginPage(): string {
+  return `<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HKClaw Admin Login</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <style>
+      :root {
+        --bg: #09131a;
+        --panel: rgba(12, 28, 38, 0.92);
+        --panel-soft: rgba(14, 31, 42, 0.82);
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #f5efe1;
+        --muted: #9eb2bb;
+        --accent: #ffba63;
+        --mint: #51d4c1;
+        --danger: #ff7f73;
+        --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+        --mono: ui-monospace, "SFMono-Regular", "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 24px;
+        color: var(--text);
+        font-family: var(--sans);
+        background:
+          radial-gradient(circle at top left, rgba(81, 212, 193, 0.16), transparent 28%),
+          radial-gradient(circle at bottom right, rgba(255, 186, 99, 0.18), transparent 30%),
+          linear-gradient(180deg, #07131b 0%, #091923 55%, #061018 100%);
+      }
+      .shell {
+        width: min(1120px, 100%);
+        min-height: calc(100vh - 48px);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(340px, 420px);
+        align-items: center;
+        gap: 24px;
+      }
+      .intro {
+        position: relative;
+        padding: 32px;
+        border-radius: 32px;
+        border: 1px solid var(--line);
+        background:
+          radial-gradient(circle at top left, rgba(255, 186, 99, 0.14), transparent 34%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%),
+          var(--panel-soft);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
+        overflow: hidden;
+      }
+      .intro::after {
+        content: "";
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(81, 212, 193, 0.22), transparent 68%);
+        pointer-events: none;
+      }
+      .panel {
+        padding: 28px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+      }
+      .eyebrow {
+        color: var(--muted);
+        font: 500 12px/1.3 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 14px 0 10px;
+        font-size: 34px;
+        line-height: 1;
+      }
+      .hero-copy {
+        max-width: 56ch;
+      }
+      p {
+        margin: 0 0 18px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .intro-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 24px;
+      }
+      .intro-card {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .intro-card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text);
+        font: 700 12px/1.3 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .intro-card span {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .helper {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(81, 212, 193, 0.08);
+        color: #d9f8f2;
+        line-height: 1.6;
+      }
+      form {
+        display: grid;
+        gap: 14px;
+      }
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+      }
+      input, button {
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        padding: 13px 14px;
+        font: inherit;
+      }
+      input {
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+      }
+      button {
+        margin-top: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        color: #132028;
+        background: var(--accent);
+      }
+      .form-note {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .error {
+        min-height: 20px;
+        color: var(--danger);
+        font-size: 14px;
+      }
+      @media (max-width: 900px) {
+        .shell {
+          grid-template-columns: 1fr;
+          min-height: auto;
+        }
+        .intro-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="intro">
+        <div class="eyebrow">HKClaw Control Deck</div>
+        <h1>운영실 입장</h1>
+        <p class="hero-copy">로그인 이후에는 직원 배치, 맵 편집, 서비스 제어, 대시보드 확인까지 같은 운영 화면에서 이어집니다.</p>
+        <div class="intro-grid">
+          <div class="intro-card">
+            <strong>Auth</strong>
+            <span>관리자 계정은 SQLite DB에 저장되고, 성공 시 세션 쿠키를 발급합니다.</span>
+          </div>
+          <div class="intro-card">
+            <strong>Office</strong>
+            <span>직원 배치, 팀 채팅, 맵 운영, 로그 확인을 한 화면에서 다룹니다.</span>
+          </div>
+          <div class="intro-card">
+            <strong>Scope</strong>
+            <span>부트스트랩 계정은 로컬 관리자 제어용입니다. 노출 포트라면 비밀번호를 먼저 교체하세요.</span>
+          </div>
+        </div>
+        <div class="helper">HKClaw 운영실은 브라우저 로그인으로 보호됩니다. 외부에 포트를 열었다면 강한 비밀번호와 호스트 방화벽 구성이 먼저입니다.</div>
+      </section>
+      <section class="panel">
+        <div class="eyebrow">Sign In</div>
+        <h1>관리자 로그인</h1>
+        <p>부트스트랩 계정 또는 이미 저장된 관리자 계정으로 로그인하세요.</p>
+        <form id="login-form">
+          <label>
+            Username
+            <input name="username" autocomplete="username" required />
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <div class="error" id="login-error"></div>
+          <button type="submit">Sign In</button>
+        </form>
+        <div class="form-note">로그인 성공 후에는 메인 오피스 맵과 운영 패널로 바로 이동합니다.</div>
+      </section>
+    </main>
+    <script>
+      const form = document.getElementById('login-form');
+      const error = document.getElementById('login-error');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        error.textContent = '';
+        const formData = new FormData(form);
+        const payload = {
+          username: String(formData.get('username') || ''),
+          password: String(formData.get('password') || ''),
+        };
+
+        try {
+          const response = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(body.error || 'Login failed');
+          }
+          window.location.href = '/';
+        } catch (err) {
+          error.textContent = err instanceof Error ? err.message : 'Login failed';
+        }
+      });
+    </script>
+  </body>
+</html>`;
+}
+
+export function renderSetupRequiredPage(): string {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HKClaw Admin Setup Required</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #081017;
+        color: #f5efe1;
+        font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+      }
+      .panel {
+        width: min(560px, 100%);
+        padding: 28px;
+        border-radius: 20px;
+        background: rgba(12, 28, 38, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      code {
+        color: #ffba63;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="panel">
+      <h1>Admin login is not configured</h1>
+      <p>Set <code>HKCLAW_ADMIN_PASSWORD</code> and optionally <code>HKCLAW_ADMIN_USERNAME</code>, then restart the admin service. HKClaw will bootstrap that account into the SQLite DB on startup.</p>
+    </main>
+  </body>
+</html>`;
 }
 
 function sendHtml(res: http.ServerResponse, html: string): void {
@@ -275,16 +779,15 @@ async function readJsonBody(
   return JSON.parse(Buffer.concat(chunks).toString('utf-8'));
 }
 
-function renderAdminPage(): string {
+export function renderAdminPage(): string {
   return `<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HKClaw Control Deck</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
       :root {
         --bg: #07131b;
         --bg-soft: #10222b;
@@ -299,8 +802,8 @@ function renderAdminPage(): string {
         --danger: #ff7f73;
         --blue: #7ab7ff;
         --shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
-        --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
-        --sans: "Space Grotesk", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        --mono: ui-monospace, "SFMono-Regular", "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", Consolas, monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
       }
 
       * {
@@ -1167,6 +1670,12 @@ function renderAdminPage(): string {
         }, 3200);
       }
 
+      function redirectToLogin() {
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+
       async function api(path, body) {
         const response = await fetch(path, {
           method: 'POST',
@@ -1174,6 +1683,10 @@ function renderAdminPage(): string {
           body: JSON.stringify(body || {}),
         });
         const payload = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          redirectToLogin();
+          throw new Error('Authentication required');
+        }
         if (!response.ok) {
           throw new Error(payload.error || 'Request failed');
         }
@@ -1182,6 +1695,10 @@ function renderAdminPage(): string {
 
       async function loadState() {
         const response = await fetch('/api/admin/state', { cache: 'no-store' });
+        if (response.status === 401) {
+          redirectToLogin();
+          return;
+        }
         if (!response.ok) {
           throw new Error('Failed to load admin state');
         }
@@ -1688,6 +2205,7 @@ function renderAdminPage(): string {
             <div class="hero-actions">
               <button data-global-action="refresh">Roll Call</button>
               <button class="secondary" data-global-action="reconcile">Rebuild Org</button>
+              <button class="ghost" data-global-action="logout">Sign Out</button>
               <button class="ghost" disabled>\${escapeHtml(location.host)}</button>
             </div>
             <div class="stat-grid">
@@ -1797,6 +2315,13 @@ function renderAdminPage(): string {
             return;
           }
 
+          if (target.dataset.globalAction === 'logout') {
+            target.disabled = true;
+            await api('/api/admin/logout');
+            redirectToLogin();
+            return;
+          }
+
           if (target.dataset.serviceSave) {
             const card = target.closest('[data-service-card]');
             const payload = {
@@ -1894,14 +2419,108 @@ export async function startAdminWebServer(
   opts: AdminWebServerOptions,
 ): Promise<void> {
   if (adminServer) return;
+  ensureBootstrapAdminUser();
 
   adminServer = http.createServer(async (req, res) => {
     const url = new URL(
       req.url || '/',
       `http://${req.headers.host || 'localhost'}`,
     );
+    const isAuthorized = isAuthorizedAdminRequest(req.headers.cookie);
+    const authConfigured = hasConfiguredAdminAccess();
 
     try {
+      if (req.method === 'GET' && url.pathname === '/healthz') {
+        sendJson(res, 200, {
+          ok: true,
+          status: 'ok',
+          authConfigured,
+        });
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/favicon.ico') {
+        sendStaticFile(
+          res,
+          path.join(opts.projectRoot, 'assets'),
+          'hkclaw-favicon.png',
+        );
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/login') {
+        if (!authConfigured) {
+          sendHtmlPage(res, 503, renderSetupRequiredPage());
+          return;
+        }
+        if (isAuthorized) {
+          res.writeHead(302, { location: '/' });
+          res.end();
+          return;
+        }
+        sendHtmlPage(res, 200, renderLoginPage());
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/admin/login') {
+        if (!authConfigured) {
+          sendJson(res, 503, {
+            error: 'Admin login is not configured. Set HKCLAW_ADMIN_PASSWORD and restart the service.',
+          });
+          return;
+        }
+
+        const payload = adminLoginSchema.parse(await readJsonBody(req));
+        const session = authenticateAdminLogin(payload);
+        if (!session) {
+          sendJson(res, 401, { error: 'Invalid username or password' });
+          return;
+        }
+
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+          'set-cookie': buildSessionCookie(session.token, session.expiresAt),
+        });
+        res.end(JSON.stringify({ ok: true }));
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/admin/logout') {
+        const token = getAdminSessionTokenFromCookie(req.headers.cookie);
+        if (token) {
+          deleteAdminSessionByTokenHash(hashAdminSessionToken(token));
+        }
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+          'set-cookie': buildExpiredSessionCookie(),
+        });
+        res.end(JSON.stringify({ ok: true }));
+        return;
+      }
+
+      if (!authConfigured) {
+        if (req.method === 'GET' && url.pathname === '/') {
+          sendHtmlPage(res, 503, renderSetupRequiredPage());
+          return;
+        }
+        sendJson(res, 503, {
+          error: 'Admin login is not configured. Set HKCLAW_ADMIN_PASSWORD and restart the service.',
+        });
+        return;
+      }
+
+      if (!isAuthorized && !isPublicAdminRoute(req.method || 'GET', url.pathname)) {
+        if (req.method === 'GET' && url.pathname === '/') {
+          res.writeHead(302, { location: '/login' });
+          res.end();
+          return;
+        }
+        sendAuthRequired(res);
+        return;
+      }
+
       if (req.method === 'GET' && url.pathname === '/api/admin/state') {
         sendJson(res, 200, {
           ...readAdminState(opts.projectRoot),

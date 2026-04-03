@@ -27,6 +27,12 @@ interface ServiceCheck {
   status: ServiceStatus;
 }
 
+export function getPrimaryServiceStatus(
+  services: ServiceCheck[],
+): ServiceStatus {
+  return services[0]?.status ?? 'not_configured';
+}
+
 /* ------------------------------------------------------------------ */
 /*  Service status checks                                              */
 /* ------------------------------------------------------------------ */
@@ -215,7 +221,7 @@ export async function run(_args: string[]): Promise<void> {
   emitStatus('VERIFY', {
     SERVICES: JSON.stringify(servicesSummary),
     // Legacy field (keep for backward compatibility)
-    SERVICE: services[0].status,
+    SERVICE: getPrimaryServiceStatus(services),
     CREDENTIALS: credentials,
     CONFIGURED_CHANNELS: configuredChannels.join(','),
     CHANNEL_AUTH: JSON.stringify(channelAuth),

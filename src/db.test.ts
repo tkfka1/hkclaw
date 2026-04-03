@@ -4,13 +4,19 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import {
   _initTestDatabase,
+  countAdminUsers,
+  createAdminSession,
   createAdminWebChatMessage,
   createTask,
   createProducedWorkItem,
+  deleteAdminSessionByTokenHash,
+  deleteExpiredAdminSessions,
   deleteOfficeTeam,
   deleteRegisteredGroup,
   deleteSession,
   deleteTask,
+  getAdminSessionByTokenHash,
+  getAdminUserByUsername,
   getAdminWebChatMessages,
   getAllChats,
   getAllRegisteredGroups,
@@ -35,7 +41,10 @@ import {
   setRegisteredGroup,
   storeChatMetadata,
   storeMessage,
+  touchAdminSession,
+  touchAdminUserLogin,
   updateTask,
+  upsertAdminUser,
   upsertOfficeTeam,
 } from './db.js';
 import {
@@ -225,6 +234,69 @@ describe('storeMessage', () => {
     );
     expect(messages).toHaveLength(1);
     expect(messages[0].content).toBe('@징징이 안녕');
+  });
+});
+
+describe('admin auth accessors', () => {
+  it('upserts admin users by username', () => {
+    const first = upsertAdminUser({
+      username: 'admin',
+      passwordHash: 'hash-1',
+    });
+    const second = upsertAdminUser({
+      username: 'admin',
+      passwordHash: 'hash-2',
+    });
+
+    expect(countAdminUsers()).toBe(1);
+    expect(first.username).toBe('admin');
+    expect(second.password_hash).toBe('hash-2');
+    expect(getAdminUserByUsername('admin')?.password_hash).toBe('hash-2');
+  });
+
+  it('creates, looks up, touches, and deletes admin sessions', () => {
+    const user = upsertAdminUser({
+      username: 'captain',
+      passwordHash: 'hash-bridge',
+    });
+    const session = createAdminSession({
+      userId: user.id,
+      tokenHash: 'token-hash',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+    });
+
+    expect(getAdminSessionByTokenHash('token-hash')?.username).toBe('captain');
+
+    touchAdminSession(session.id);
+    touchAdminUserLogin(user.id);
+
+    expect(getAdminSessionByTokenHash('token-hash')?.last_used_at).toBeTruthy();
+    expect(getAdminUserByUsername('captain')?.last_login_at).toBeTruthy();
+
+    deleteAdminSessionByTokenHash('token-hash');
+    expect(getAdminSessionByTokenHash('token-hash')).toBeUndefined();
+  });
+
+  it('deletes expired admin sessions without touching active ones', () => {
+    const user = upsertAdminUser({
+      username: 'ops',
+      passwordHash: 'hash-ops',
+    });
+    createAdminSession({
+      userId: user.id,
+      tokenHash: 'expired-token',
+      expiresAt: '2024-01-01T00:00:00.000Z',
+    });
+    createAdminSession({
+      userId: user.id,
+      tokenHash: 'active-token',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+    });
+
+    deleteExpiredAdminSessions('2025-01-01T00:00:00.000Z');
+
+    expect(getAdminSessionByTokenHash('expired-token')).toBeUndefined();
+    expect(getAdminSessionByTokenHash('active-token')).toBeTruthy();
   });
 });
 

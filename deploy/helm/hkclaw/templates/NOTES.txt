@@ -1,0 +1,19 @@
+HKClaw installs as a single-replica StatefulSet.
+
+- Admin URL: http://{{ include "hkclaw.fullname" . }}:{{ .Values.service.port }}/
+- Health probe: http://{{ include "hkclaw.fullname" . }}:{{ .Values.service.port }}/healthz
+
+Before first install, provide:
+
+- a writable PVC for SQLite and runtime state
+- a bootstrap service env secret or inline `serviceEnv.bootstrapContents`
+- admin credentials through `admin.existingSecret` or inline `admin.username` and `admin.password`
+
+Example:
+
+  helm upgrade --install {{ .Release.Name }} ./deploy/helm/hkclaw \
+    --set image.repository=ghcr.io/example/hkclaw \
+    --set image.tag=1.2.12 \
+    --set persistence.size=50Gi \
+    --set serviceEnv.existingSecret=hkclaw-service-env \
+    --set admin.existingSecret=hkclaw-admin

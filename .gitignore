@@ -41,6 +41,7 @@ cache/
 runners/*/node_modules/
 runners/codex-runner-backups/
 *.bak-*
+hkclaw-admin.pid
 
 # OS
 .DS_Store

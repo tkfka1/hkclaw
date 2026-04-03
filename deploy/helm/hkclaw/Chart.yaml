@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hkclaw
+description: Stateful Helm chart for running HKClaw with persistent local storage.
+type: application
+version: 0.1.0
+appVersion: "1.2.12"

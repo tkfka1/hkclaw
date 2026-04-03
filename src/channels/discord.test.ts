@@ -1047,7 +1047,7 @@ describe('DiscordChannel', () => {
       globalThis.fetch = originalFetch;
     });
 
-    it('turns live voice input into a synthetic inbound message', async () => {
+    it('turns live voice input into a synthetic inbound message and mirrors it into unified call chat', async () => {
       getEnvMock.mockImplementation((key: string) => {
         if (key === 'DISCORD_VOICE_CHANNEL_ID') return '1486805999535783986';
         if (key === 'GROQ_API_KEY') return 'test-groq-key';
@@ -1107,7 +1107,12 @@ describe('DiscordChannel', () => {
           }),
         ),
       );
-      expect(sendMock).not.toHaveBeenCalled();
+      expect(opts.onMessage).toHaveBeenCalledTimes(1);
+      expect(sendMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: '**Alice Voice**: 안녕 코덱스',
+        }),
+      );
     });
 
     it('passes configured transcription model and language to Groq live voice', async () => {

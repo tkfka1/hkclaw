@@ -58,6 +58,9 @@ HKClaw는 다음 환경을 기준으로 설계되어 있다.
 
 Windows 네이티브 서비스 운영은 1급 경로가 아니다. Windows 사용자라면 WSL Ubuntu 안에서 돌리는 것이 맞다.
 
+호스트별 지원 범위와 제한 사항은 [docs/host-support-matrix.md](docs/host-support-matrix.md)에 정리했다.
+컨테이너 배포 경로는 [docs/container-deployment.md](docs/container-deployment.md)에 정리했다.
+
 ### 어떤 OS 계정에서 설치해야 하나
 
 가능하면 HKClaw 전용 운영 계정에서 설치하고 실행하는 것이 좋다.
@@ -151,15 +154,33 @@ admin-first 부팅에서는 `.env`가 필수는 아니다.
 
 ```bash
 HKCLAW_ADMIN_HOST=0.0.0.0
-HKCLAW_ADMIN_PORT=4621
+HKCLAW_ADMIN_PORT=4622
 ```
 
+브라우저 로그인용 관리자 계정을 부팅 시 자동 생성하려면 아래도 함께 넣으면 된다.
+
+```bash
+HKCLAW_ADMIN_USERNAME=admin
+HKCLAW_ADMIN_PASSWORD=외부에열기전에반드시바꿀값
+```
+
+이 값들은 SQLite DB의 첫 관리자 계정을 생성하거나 갱신하는 bootstrap 용도다. 실제 접속은 웹 로그인 폼과 세션 쿠키로 처리된다. `HKCLAW_ADMIN_PASSWORD`가 비어 있으면 관리자 계정이 자동 생성되지 않는다.
+
+admin UI는 첫 렌더를 로컬 시스템 폰트 스택으로 처리하므로, bootstrap 로그인 화면과 대시보드가 public font CDN이나 일반 인터넷 연결에 의존하지 않는다.
+
 이 파일이 없어도 HKClaw는 기본값으로 admin을 띄울 수 있다.
+기본 bind 주소는 `0.0.0.0:4622` 이므로, 호스트 방화벽과 네트워크가 허용하면 다른 장비에서도 `http://<host-ip>:4622/` 으로 접속할 수 있다.
 
 ### 3. bootstrap admin 서비스 시작
 
 ```bash
 npm run setup -- --step service
+```
+
+또는 설치/빌드 후 패키지 CLI로 바로 실행할 수 있다:
+
+```bash
+hkclaw start
 ```
 
 아직 dashboard 서비스가 하나도 없으면 HKClaw가 자동으로 `hkclaw-admin` bootstrap admin 서비스를 만든다.
@@ -176,11 +197,35 @@ npm run setup -- --step service
 - macOS user mode: `~/Library/LaunchAgents/com.hkclaw-admin.plist`
 - systemd 없는 Linux: `start-hkclaw-admin.sh`
 
+Windows 네이티브 제한과 WSL fallback 동작까지 포함한 전체 매트릭스는 [docs/host-support-matrix.md](docs/host-support-matrix.md)를 보면 된다.
+
+### 서비스 CLI
+
+npm 패키지로 설치했을 때 HKClaw는 공통 서비스 라이프사이클용 `hkclaw` CLI를 제공한다:
+
+```bash
+hkclaw start
+hkclaw stop
+hkclaw restart
+hkclaw status
+hkclaw verify
+```
+
+로컬 npm 스크립트도 함께 제공한다:
+
+```bash
+npm run service:start
+npm run service:stop
+npm run service:restart
+npm run service:status
+```
+
 ### 4. admin 웹 접속
 
 기본 주소:
 
-- `http://localhost:4621/`
+- `http://localhost:4622/`
+- 외부 확인용: `http://<host-ip>:4622/`
 
 이제부터 초기 설정은 파일을 직접 쓰는 대신 내부 웹에서 진행하는 것이 기본 경로다.
 

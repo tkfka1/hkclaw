@@ -1,0 +1,27 @@
+services:
+  hkclaw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hkclaw:local
+    restart: unless-stopped
+    ports:
+      - '${HKCLAW_ADMIN_PORT:-4622}:4622'
+    working_dir: /app
+    environment:
+      NODE_ENV: production
+      HKCLAW_ADMIN_HOST: 0.0.0.0
+      HKCLAW_ADMIN_PORT: '${HKCLAW_ADMIN_PORT:-4622}'
+      HKCLAW_STORE_DIR: /app/store
+      HKCLAW_GROUPS_DIR: /app/groups
+      HKCLAW_DATA_DIR: /app/data
+      HKCLAW_SERVICE_ENV_PATH: '${HKCLAW_SERVICE_ENV_PATH:-/app/.env.agent.primary}'
+    volumes:
+      - ./data:/app/data
+      - ./store:/app/store
+      - ./groups:/app/groups
+      - ./cache:/app/cache
+      - ./logs:/app/logs
+      - ./admin-assets:/app/admin-assets
+      - ./.env:/app/.env:ro
+      - ${HKCLAW_SERVICE_ENV_FILE:-./.env.agent.primary}:${HKCLAW_SERVICE_ENV_PATH:-/app/.env.agent.primary}

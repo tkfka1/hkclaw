@@ -11,6 +11,7 @@ import { parseEnvFilePath } from '../src/env.js';
 import { logger } from '../src/logger.js';
 import { discoverConfiguredServices } from '../src/service-discovery.js';
 import {
+  describeHostSupport,
   getPlatform,
   getNodePath,
   getServiceManager,
@@ -91,6 +92,12 @@ export async function run(_args: string[]): Promise<void> {
   const platform = getPlatform();
   const nodePath = getNodePath();
   const homeDir = os.homedir();
+  const serviceManager = getServiceManager();
+  const support = describeHostSupport({
+    platform,
+    isWSL: isWSL(),
+    serviceManager,
+  });
 
   logger.info({ platform, nodePath, projectRoot }, 'Setting up service');
 
@@ -131,7 +138,13 @@ export async function run(_args: string[]): Promise<void> {
       NODE_PATH: nodePath,
       PROJECT_PATH: projectRoot,
       STATUS: 'failed',
-      ERROR: 'unsupported_platform',
+      ERROR:
+        platform === 'windows'
+          ? 'windows_native_not_supported'
+          : 'unsupported_platform',
+      SUPPORT_LEVEL: support.level,
+      SUPPORT_LABEL: support.label,
+      HINT: support.setupFlow,
       LOG: 'logs/setup.log',
     });
     process.exit(1);

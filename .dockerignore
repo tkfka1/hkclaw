@@ -1,0 +1,13 @@
+node_modules
+dist
+runners/*/node_modules
+runners/*/dist
+.git
+.github
+logs
+cache
+data
+store
+groups
+coverage
+*.log

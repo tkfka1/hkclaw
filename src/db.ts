@@ -263,6 +263,26 @@ function createSchema(database: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_admin_web_chat_messages_service
       ON admin_web_chat_messages(service_id, id);
+
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      last_login_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS admin_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      last_used_at TEXT,
+      FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires_at
+      ON admin_sessions(expires_at);
   `);
 
   // Add context_mode column if it doesn't exist (migration for existing DBs)
@@ -773,6 +793,28 @@ export interface AdminWebChatMessage {
   role: 'user' | 'assistant' | 'system' | 'error';
   content: string;
   created_at: string;
+}
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  password_hash: string;
+  created_at: string;
+  updated_at: string;
+  last_login_at: string | null;
+}
+
+export interface AdminSession {
+  id: number;
+  user_id: number;
+  token_hash: string;
+  created_at: string;
+  expires_at: string;
+  last_used_at: string | null;
+}
+
+export interface AdminSessionWithUser extends AdminSession {
+  username: string;
 }
 
 /**
@@ -2045,6 +2087,117 @@ export function getAdminWebChatMessages(
        ORDER BY id ASC`,
     )
     .all(serviceId, limit) as AdminWebChatMessage[];
+}
+
+// --- Admin auth accessors ---
+
+export function getAdminUserByUsername(
+  username: string,
+): AdminUser | undefined {
+  return db
+    .prepare(
+      `SELECT id, username, password_hash, created_at, updated_at, last_login_at
+       FROM admin_users
+       WHERE username = ?`,
+    )
+    .get(username) as AdminUser | undefined;
+}
+
+export function countAdminUsers(): number {
+  const row = db
+    .prepare('SELECT COUNT(*) AS count FROM admin_users')
+    .get() as { count: number } | undefined;
+  return row?.count ?? 0;
+}
+
+export function upsertAdminUser(input: {
+  username: string;
+  passwordHash: string;
+}): AdminUser {
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO admin_users (username, password_hash, created_at, updated_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(username) DO UPDATE SET
+       password_hash = excluded.password_hash,
+       updated_at = excluded.updated_at`,
+  ).run(input.username, input.passwordHash, now, now);
+
+  return getAdminUserByUsername(input.username)!;
+}
+
+export function touchAdminUserLogin(userId: number): void {
+  const now = new Date().toISOString();
+  db.prepare(
+    `UPDATE admin_users
+     SET last_login_at = ?, updated_at = ?
+     WHERE id = ?`,
+  ).run(now, now, userId);
+}
+
+export function createAdminSession(input: {
+  userId: number;
+  tokenHash: string;
+  expiresAt: string;
+}): AdminSession {
+  const now = new Date().toISOString();
+  const result = db
+    .prepare(
+      `INSERT INTO admin_sessions (
+         user_id,
+         token_hash,
+         created_at,
+         expires_at,
+         last_used_at
+       ) VALUES (?, ?, ?, ?, ?)`,
+    )
+    .run(input.userId, input.tokenHash, now, input.expiresAt, now) as
+    | Database.RunResult
+    | undefined;
+
+  return db
+    .prepare(
+      `SELECT id, user_id, token_hash, created_at, expires_at, last_used_at
+       FROM admin_sessions
+       WHERE id = ?`,
+    )
+    .get(Number(result?.lastInsertRowid || 0)) as AdminSession;
+}
+
+export function getAdminSessionByTokenHash(
+  tokenHash: string,
+): AdminSessionWithUser | undefined {
+  return db
+    .prepare(
+      `SELECT
+         s.id,
+         s.user_id,
+         s.token_hash,
+         s.created_at,
+         s.expires_at,
+         s.last_used_at,
+         u.username
+       FROM admin_sessions s
+       JOIN admin_users u ON u.id = s.user_id
+       WHERE s.token_hash = ?`,
+    )
+    .get(tokenHash) as AdminSessionWithUser | undefined;
+}
+
+export function touchAdminSession(sessionId: number): void {
+  db.prepare(
+    `UPDATE admin_sessions
+     SET last_used_at = ?
+     WHERE id = ?`,
+  ).run(new Date().toISOString(), sessionId);
+}
+
+export function deleteAdminSessionByTokenHash(tokenHash: string): void {
+  db.prepare('DELETE FROM admin_sessions WHERE token_hash = ?').run(tokenHash);
+}
+
+export function deleteExpiredAdminSessions(now: string = new Date().toISOString()): void {
+  db.prepare('DELETE FROM admin_sessions WHERE expires_at <= ?').run(now);
 }
 
 // --- JSON migration ---

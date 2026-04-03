@@ -101,7 +101,7 @@ export const STATUS_SHOW_ROOM_DETAILS =
 export const USAGE_DASHBOARD_ENABLED =
   getBooleanEnv('USAGE_DASHBOARD', false) ?? false;
 const parsedAdminPort = parseInt(
-  getEnv('HKCLAW_ADMIN_PORT') || getEnv('ADMIN_WEB_PORT') || '4621',
+  getEnv('HKCLAW_ADMIN_PORT') || getEnv('ADMIN_WEB_PORT') || '4622',
   10,
 );
 export const ADMIN_WEB_HOST =
@@ -109,7 +109,7 @@ export const ADMIN_WEB_HOST =
 export const ADMIN_WEB_PORT =
   Number.isFinite(parsedAdminPort) && parsedAdminPort > 0
     ? parsedAdminPort
-    : 4621;
+    : 4622;
 
 // Timezone for scheduled tasks (cron expressions, etc.)
 // Uses system timezone by default

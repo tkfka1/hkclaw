@@ -5,13 +5,31 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 
-export type Platform = 'macos' | 'linux' | 'unknown';
+export type Platform = 'macos' | 'linux' | 'windows' | 'unknown';
 export type ServiceManager = 'launchd' | 'systemd' | 'none';
+export type HostSupportLevel = 'first_class' | 'supported' | 'limited' | 'unsupported';
+
+export interface HostSupportProfile {
+  platform: Platform;
+  isWSL: boolean;
+  serviceManager: ServiceManager;
+  level: HostSupportLevel;
+  label: string;
+  setupFlow: string;
+  notes: string[];
+}
+
+export interface HostSupportOverrides {
+  platform?: Platform;
+  isWSL?: boolean;
+  serviceManager?: ServiceManager;
+}
 
 export function getPlatform(): Platform {
   const platform = os.platform();
   if (platform === 'darwin') return 'macos';
   if (platform === 'linux') return 'linux';
+  if (platform === 'win32') return 'windows';
   return 'unknown';
 }
 
@@ -96,6 +114,103 @@ export function getServiceManager(): ServiceManager {
     return 'none';
   }
   return 'none';
+}
+
+export function describeHostSupport(
+  overrides: HostSupportOverrides = {},
+): HostSupportProfile {
+  const platform = overrides.platform ?? getPlatform();
+  const wsl = overrides.isWSL ?? isWSL();
+  const serviceManager = overrides.serviceManager ?? getServiceManager();
+
+  if (platform === 'windows') {
+    return {
+      platform,
+      isWSL: false,
+      serviceManager,
+      level: 'unsupported',
+      label: 'Windows native',
+      setupFlow: 'Use WSL Ubuntu instead of running HKClaw directly on Windows.',
+      notes: [
+        'Native Windows service management is not a supported install target.',
+        'Run the repo inside WSL Ubuntu so the Linux setup path applies.',
+      ],
+    };
+  }
+
+  if (platform === 'macos') {
+    return {
+      platform,
+      isWSL: false,
+      serviceManager,
+      level: 'supported',
+      label: 'macOS',
+      setupFlow: 'Use the normal setup flow with launchd user agents.',
+      notes: [
+        'Services are installed as per-user LaunchAgents.',
+        'Xcode Command Line Tools are required for native module builds.',
+      ],
+    };
+  }
+
+  if (platform === 'linux' && wsl) {
+    return {
+      platform,
+      isWSL: true,
+      serviceManager,
+      level: 'supported',
+      label: 'WSL Ubuntu',
+      setupFlow:
+        serviceManager === 'systemd'
+          ? 'Use the normal Linux setup flow with systemd.'
+          : 'Use the Linux setup flow; service setup falls back to repo-local nohup wrappers when systemd is unavailable.',
+      notes: [
+        'Windows users should treat WSL Ubuntu as the supported host path.',
+        'Without systemd, generated start-*.sh wrappers are the expected service manager fallback.',
+      ],
+    };
+  }
+
+  if (platform === 'linux' && serviceManager === 'systemd') {
+    return {
+      platform,
+      isWSL: false,
+      serviceManager,
+      level: 'first_class',
+      label: 'Linux with systemd',
+      setupFlow: 'Use the normal setup flow with systemd user services.',
+      notes: [
+        'Ubuntu is the primary tested Linux target.',
+        'Other Linux distributions are supported when the same Node and systemd assumptions hold.',
+      ],
+    };
+  }
+
+  if (platform === 'linux') {
+    return {
+      platform,
+      isWSL: false,
+      serviceManager,
+      level: 'limited',
+      label: 'Linux without systemd',
+      setupFlow:
+        'Use the Linux setup flow; service setup falls back to repo-local nohup wrappers.',
+      notes: [
+        'Install and build remain supported.',
+        'Long-running service management is limited to the generated wrapper scripts.',
+      ],
+    };
+  }
+
+  return {
+    platform,
+    isWSL: false,
+    serviceManager,
+    level: 'unsupported',
+    label: 'Unknown host',
+    setupFlow: 'Use Linux, WSL Ubuntu, or macOS.',
+    notes: ['The current host OS is outside the documented support matrix.'],
+  };
 }
 
 export function getNodePath(): string {

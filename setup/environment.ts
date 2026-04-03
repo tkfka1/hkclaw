@@ -9,7 +9,13 @@ import Database from 'better-sqlite3';
 
 import { STORE_DIR } from '../src/config.js';
 import { logger } from '../src/logger.js';
-import { getPlatform, isHeadless, isWSL } from './platform.js';
+import {
+  describeHostSupport,
+  getPlatform,
+  getServiceManager,
+  isHeadless,
+  isWSL,
+} from './platform.js';
 import { emitStatus } from './status.js';
 
 export async function run(_args: string[]): Promise<void> {
@@ -20,6 +26,12 @@ export async function run(_args: string[]): Promise<void> {
   const platform = getPlatform();
   const wsl = isWSL();
   const headless = isHeadless();
+  const serviceManager = getServiceManager();
+  const hostSupport = describeHostSupport({
+    platform,
+    isWSL: wsl,
+    serviceManager,
+  });
 
   // Check existing config
   const hasEnv = fs.existsSync(path.join(projectRoot, '.env'));
@@ -52,6 +64,8 @@ export async function run(_args: string[]): Promise<void> {
     {
       platform,
       wsl,
+      serviceManager,
+      hostSupport: hostSupport.level,
       hasEnv,
       hasAuth,
       hasRegisteredGroups,
@@ -63,6 +77,10 @@ export async function run(_args: string[]): Promise<void> {
     PLATFORM: platform,
     IS_WSL: wsl,
     IS_HEADLESS: headless,
+    SERVICE_MANAGER: serviceManager,
+    HOST_SUPPORT: hostSupport.level,
+    HOST_SUPPORT_LABEL: hostSupport.label,
+    HOST_SETUP_FLOW: hostSupport.setupFlow,
     HAS_ENV: hasEnv,
     HAS_AUTH: hasAuth,
     HAS_REGISTERED_GROUPS: hasRegisteredGroups,

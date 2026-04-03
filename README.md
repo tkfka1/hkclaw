@@ -57,6 +57,9 @@ HKClaw is designed for:
 
 Windows-native service management is not a first-class target. If you are on Windows, run HKClaw inside WSL Ubuntu.
 
+Host-by-host support details live in [docs/host-support-matrix.md](docs/host-support-matrix.md).
+Container deployment details live in [docs/container-deployment.md](docs/container-deployment.md).
+
 ### Which OS Account Should Install It
 
 Install and run HKClaw from a dedicated operating-system account whenever possible.
@@ -148,15 +151,33 @@ If you want to control the bind address or port, create a minimal `.env` like th
 
 ```bash
 HKCLAW_ADMIN_HOST=0.0.0.0
-HKCLAW_ADMIN_PORT=4621
+HKCLAW_ADMIN_PORT=4622
 ```
 
+If you want the admin web to require a browser login, add bootstrap credentials:
+
+```bash
+HKCLAW_ADMIN_USERNAME=admin
+HKCLAW_ADMIN_PASSWORD=change-this-before-exposing-the-port
+```
+
+HKClaw uses these values to create or update the first admin account in SQLite, then signs in through the web login form with a session cookie. If `HKCLAW_ADMIN_PASSWORD` is unset, no admin account is bootstrapped.
+
+The admin UI uses local system font stacks for first render, so bootstrap login and dashboard pages do not need public font CDNs or general internet access to paint correctly.
+
 If you skip `.env`, HKClaw still boots the admin service with defaults.
+By default it binds the admin web on `0.0.0.0:4622`, so you can also reach it from another machine at `http://<host-ip>:4622/` if the host firewall/network allows it.
 
 ### 3. Start the Bootstrap Admin Service
 
 ```bash
 npm run setup -- --step service
+```
+
+Or, after install/build, use the package CLI:
+
+```bash
+hkclaw start
 ```
 
 If no dashboard service is configured yet, HKClaw automatically creates a bootstrap admin service called `hkclaw-admin`.
@@ -173,11 +194,35 @@ Generated targets:
 - macOS user mode: `~/Library/LaunchAgents/com.hkclaw-admin.plist`
 - Linux without systemd: `start-hkclaw-admin.sh`
 
+The full host matrix, including Windows-native limitations and WSL fallback behavior, is documented in [docs/host-support-matrix.md](docs/host-support-matrix.md).
+
+### Service CLI
+
+When HKClaw is installed from npm, the package exposes an `hkclaw` CLI for the common service lifecycle:
+
+```bash
+hkclaw start
+hkclaw stop
+hkclaw restart
+hkclaw status
+hkclaw verify
+```
+
+Equivalent local npm scripts are also available:
+
+```bash
+npm run service:start
+npm run service:stop
+npm run service:restart
+npm run service:status
+```
+
 ### 4. Open the Admin Web
 
 By default:
 
-- `http://localhost:4621/`
+- `http://localhost:4622/`
+- external access: `http://<host-ip>:4622/`
 
 You can now do initial setup from the internal web instead of manually writing service files.
 

@@ -1057,10 +1057,11 @@ export class DiscordChannel implements Channel {
       this.lastInboundModeByJid.set(chatJid, 'voice');
 
       const mirrorJid = this.resolveVoiceTextTargetJid(chatJid);
-      if (mirrorJid && mirrorJid !== chatJid) {
+      if (mirrorJid) {
         await this.sendTextOnlyMessage(
           mirrorJid,
           `**${senderName}**: ${transcript}`,
+          { recordOutbound: mirrorJid !== chatJid },
         );
         logger.info(
           { channelId, userId, mirrorJid, transcriptLength: transcript.length },
@@ -1134,7 +1135,11 @@ export class DiscordChannel implements Channel {
     return !this.agentTypeFilter || groupType === this.agentTypeFilter;
   }
 
-  private async sendTextOnlyMessage(jid: string, text: string): Promise<void> {
+  private async sendTextOnlyMessage(
+    jid: string,
+    text: string,
+    options?: { recordOutbound?: boolean },
+  ): Promise<void> {
     if (!this.client) {
       logger.warn('Discord client not initialized');
       return;
@@ -1248,7 +1253,7 @@ export class DiscordChannel implements Channel {
       { jid, length: cleaned.length, files: files.length },
       'Discord text-only message sent',
     );
-    if (cleaned) {
+    if (cleaned && options?.recordOutbound !== false) {
       this.recordOutboundTextMessage(jid, cleaned);
     }
   }

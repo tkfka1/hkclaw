@@ -1,0 +1,141 @@
+{{- if ne (int .Values.replicaCount) 1 }}
+{{- fail "HKClaw only supports replicaCount=1 because it uses SQLite and local writable runtime state." }}
+{{- end }}
+{{- if and (not .Values.persistence.enabled) (not .Values.persistence.existingClaim) }}
+{{- fail "HKClaw requires persistent storage. Enable persistence or provide persistence.existingClaim." }}
+{{- end }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "hkclaw.fullname" . }}
+  labels:
+    {{- include "hkclaw.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "hkclaw.fullname" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hkclaw.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "hkclaw.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "hkclaw.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: bootstrap-state
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              mkdir -p /workspace/store /workspace/data /workspace/groups /workspace/cache /workspace/logs /workspace/admin-assets
+              if [ -f /bootstrap/service-env ]; then
+                if [ "{{ ternary "true" "false" .Values.serviceEnv.overwriteOnStart }}" = "true" ] || [ ! -s {{ .Values.serviceEnv.path }} ]; then
+                  cp /bootstrap/service-env {{ .Values.serviceEnv.path }}
+                fi
+              fi
+              touch {{ .Values.serviceEnv.path }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            {{- if or .Values.serviceEnv.existingSecret .Values.serviceEnv.bootstrapContents }}
+            - name: service-env-bootstrap
+              mountPath: /bootstrap
+              readOnly: true
+            {{- end }}
+      containers:
+        - name: hkclaw
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: HKCLAW_ADMIN_HOST
+              value: 0.0.0.0
+            - name: HKCLAW_ADMIN_PORT
+              value: {{ .Values.service.port | quote }}
+            - name: HKCLAW_STORE_DIR
+              value: /workspace/store
+            - name: HKCLAW_GROUPS_DIR
+              value: /workspace/groups
+            - name: HKCLAW_DATA_DIR
+              value: /workspace/data
+            - name: HKCLAW_SERVICE_ENV_PATH
+              value: {{ .Values.serviceEnv.path | quote }}
+            {{- if or .Values.admin.existingSecret (and .Values.admin.username .Values.admin.password) }}
+            - name: HKCLAW_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hkclaw.adminSecretName" . }}
+                  key: {{ .Values.admin.usernameKey }}
+            - name: HKCLAW_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hkclaw.adminSecretName" . }}
+                  key: {{ .Values.admin.passwordKey }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "hkclaw.persistenceClaimName" . }}
+        {{- if or .Values.serviceEnv.existingSecret .Values.serviceEnv.bootstrapContents }}
+        - name: service-env-bootstrap
+          secret:
+            secretName: {{ include "hkclaw.serviceEnvSecretName" . }}
+            items:
+              - key: {{ .Values.serviceEnv.secretKey }}
+                path: service-env
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

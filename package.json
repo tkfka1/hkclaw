@@ -1,15 +1,24 @@
 {
-  "name": "hkclaw",
+  "name": "@tkfka1/hkclaw",
   "version": "1.2.12",
   "description": "Personal Claude assistant. Lightweight, secure, customizable.",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "hkclaw": "dist/hkclaw-cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "build:runners": "npm --prefix runners/agent-runner install && npm --prefix runners/agent-runner run build && npm --prefix runners/codex-runner install && npm --prefix runners/codex-runner run build",
+    "cli": "node dist/hkclaw-cli.js",
+    "service:start": "node dist/hkclaw-cli.js start",
+    "service:stop": "node dist/hkclaw-cli.js stop",
+    "service:restart": "node dist/hkclaw-cli.js restart",
+    "service:status": "node dist/hkclaw-cli.js status",
     "restart:hint": "tsx src/restart-context-cli.ts write",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm test && npm run typecheck && npm run build",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:fix": "prettier --write \"src/**/*.ts\"",
@@ -48,5 +57,9 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
