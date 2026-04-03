@@ -418,7 +418,10 @@ function buildStatusContent(): string {
       );
       const duplicateTypes = new Set<RoomEntry['agentType']>();
       for (const agent of room.agents) {
-        if (room.agents.filter((item) => item.agentType === agent.agentType).length > 1) {
+        if (
+          room.agents.filter((item) => item.agentType === agent.agentType)
+            .length > 1
+        ) {
           duplicateTypes.add(agent.agentType);
         }
       }
@@ -497,7 +500,10 @@ async function buildUsageContent(): Promise<string> {
   const codexSnapshotRows: UsageRow[] = [];
   let hasFreshCodexSnapshotRows = false;
   for (const snapshot of codexSnapshots) {
-    const extracted = extractCodexUsageRows(snapshot, USAGE_SNAPSHOT_MAX_AGE_MS);
+    const extracted = extractCodexUsageRows(
+      snapshot,
+      USAGE_SNAPSHOT_MAX_AGE_MS,
+    );
     if (extracted.some((row) => row.h5pct >= 0 || row.d7pct >= 0)) {
       hasFreshCodexSnapshotRows = true;
     }

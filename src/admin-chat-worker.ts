@@ -1,10 +1,6 @@
 import { randomUUID } from 'crypto';
 
-import {
-  ASSISTANT_NAME,
-  SERVICE_AGENT_TYPE,
-  SERVICE_ID,
-} from './config.js';
+import { ASSISTANT_NAME, SERVICE_AGENT_TYPE, SERVICE_ID } from './config.js';
 import {
   deleteSession,
   getAllRegisteredGroups,
@@ -43,7 +39,8 @@ async function main(): Promise<void> {
   initDatabase();
 
   const chatJid = input.chatJid?.trim() || `admin:web:${SERVICE_ID}`;
-  const defaultDeskName = SERVICE_ID === 'admin-web' ? 'Admin Desk' : `${ASSISTANT_NAME} Desk`;
+  const defaultDeskName =
+    SERVICE_ID === 'admin-web' ? 'Admin Desk' : `${ASSISTANT_NAME} Desk`;
   const group: RegisteredGroup = input.group
     ? {
         ...input.group,
@@ -69,7 +66,8 @@ async function main(): Promise<void> {
       queue: {
         registerProcess: () => undefined,
       },
-      getRegisteredGroups: () => getAllRegisteredGroups({ serviceId: SERVICE_ID }),
+      getRegisteredGroups: () =>
+        getAllRegisteredGroups({ serviceId: SERVICE_ID }),
       getSessions: sessions,
       persistSession: (folder, sessionId) => {
         setSession(folder, sessionId, SERVICE_ID);

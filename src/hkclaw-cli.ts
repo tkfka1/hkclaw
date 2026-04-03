@@ -109,16 +109,31 @@ function runSetupStep(step: 'service' | 'verify'): void {
 
 function stopLaunchdService(target: ServiceTarget): void {
   try {
-    execFileSync('launchctl', ['unload', '-w', path.join(os.homedir(), 'Library', 'LaunchAgents', `${target.launchdLabel}.plist`)], {
-      stdio: 'ignore',
-    });
+    execFileSync(
+      'launchctl',
+      [
+        'unload',
+        '-w',
+        path.join(
+          os.homedir(),
+          'Library',
+          'LaunchAgents',
+          `${target.launchdLabel}.plist`,
+        ),
+      ],
+      {
+        stdio: 'ignore',
+      },
+    );
   } catch {
     // already unloaded or unavailable
   }
 }
 
 function stopSystemdService(target: ServiceTarget): void {
-  const args = isRoot() ? ['stop', target.serviceName] : ['--user', 'stop', target.serviceName];
+  const args = isRoot()
+    ? ['stop', target.serviceName]
+    : ['--user', 'stop', target.serviceName];
   try {
     execFileSync('systemctl', args, { stdio: 'ignore' });
   } catch {

@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
-const cachedTextAssets = new Map<string, { content: string; mtimeMs: number }>();
+const cachedTextAssets = new Map<
+  string,
+  { content: string; mtimeMs: number }
+>();
 
 function readTextAsset(relativePath: string): string {
   const filePath = path.join(process.cwd(), relativePath);

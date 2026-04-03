@@ -107,7 +107,9 @@ describe('service metadata helpers', () => {
     expect(primary?.serviceId).toBe('prime');
     expect(primary?.assistantName).toBe('Prime');
     expect(primary?.role).toBe('normal');
-    expect(primary?.envOverlayPath).toBe(path.join(projectRoot, '.env.primary'));
+    expect(primary?.envOverlayPath).toBe(
+      path.join(projectRoot, '.env.primary'),
+    );
   });
 
   it('uses the primary service id as the legacy fallback assistant name', () => {

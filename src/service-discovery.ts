@@ -162,7 +162,8 @@ export function discoverConfiguredServices(
       overlayPath: hasPrimaryOverlay ? primaryOverlayPath : undefined,
       source: 'primary',
       isPrimary: true,
-      defaultAssistantName: baseEnv.ASSISTANT_NAME || baseEnv.SERVICE_ID || 'primary',
+      defaultAssistantName:
+        baseEnv.ASSISTANT_NAME || baseEnv.SERVICE_ID || 'primary',
       defaultRole: 'normal',
     });
     if (primary) {
@@ -185,7 +186,10 @@ export function discoverConfiguredServices(
     if (legacyCodex) {
       services.push(legacyCodex);
       logger.info(
-        { serviceName: legacyCodex.serviceName, serviceId: legacyCodex.serviceId },
+        {
+          serviceName: legacyCodex.serviceName,
+          serviceId: legacyCodex.serviceId,
+        },
         'Detected legacy .env.codex overlay',
       );
     }
@@ -194,8 +198,7 @@ export function discoverConfiguredServices(
   const overlayFiles = fs
     .readdirSync(projectRoot)
     .filter(
-      (entry) =>
-        entry.startsWith('.env.agent.') && !entry.endsWith('.example'),
+      (entry) => entry.startsWith('.env.agent.') && !entry.endsWith('.example'),
     )
     .sort();
 
@@ -223,7 +226,9 @@ export function discoverConfiguredServices(
       throw new Error(`Duplicate SERVICE_ID detected: ${service.serviceId}`);
     }
     if (seenServiceNames.has(service.serviceName)) {
-      throw new Error(`Duplicate service name detected: ${service.serviceName}`);
+      throw new Error(
+        `Duplicate service name detected: ${service.serviceName}`,
+      );
     }
     seenServiceIds.add(service.serviceId);
     seenServiceNames.add(service.serviceName);

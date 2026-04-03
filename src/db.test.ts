@@ -899,10 +899,9 @@ describe('registered group isMain', () => {
     expect(assignments[0]?.jid).toBe('dc:999');
     expect(assignments[0]?.channel).toBe('discord');
     expect(assignments[0]?.isGroup).toBe(true);
-    expect(assignments.map((assignment) => assignment.serviceId).sort()).toEqual([
-      'assistant',
-      'codex',
-    ]);
+    expect(
+      assignments.map((assignment) => assignment.serviceId).sort(),
+    ).toEqual(['assistant', 'codex']);
   });
 
   it('deletes only the targeted service assignment', () => {
@@ -925,7 +924,9 @@ describe('registered group isMain', () => {
 
     deleteRegisteredGroup('dc:shared', 'codex');
 
-    expect(getRegisteredGroup('dc:shared', { serviceId: 'codex' })).toBeUndefined();
+    expect(
+      getRegisteredGroup('dc:shared', { serviceId: 'codex' }),
+    ).toBeUndefined();
     expect(getRegisteredGroup('dc:shared', { serviceId: 'claude' })?.name).toBe(
       'Shared Room Claude',
     );
@@ -1069,12 +1070,12 @@ describe('work items', () => {
       result_payload: 'voice',
     });
 
-    expect(getOpenWorkItem('dc:123', 'claude-code', 'primary')?.result_payload).toBe(
-      'primary',
-    );
-    expect(getOpenWorkItem('dc:123', 'claude-code', 'voice')?.result_payload).toBe(
-      'voice',
-    );
+    expect(
+      getOpenWorkItem('dc:123', 'claude-code', 'primary')?.result_payload,
+    ).toBe('primary');
+    expect(
+      getOpenWorkItem('dc:123', 'claude-code', 'voice')?.result_payload,
+    ).toBe('voice');
   });
 });
 

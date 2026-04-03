@@ -3,10 +3,12 @@ import path from 'path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockReadServiceEnvFile, mockGetActiveCodexAuthPath } = vi.hoisted(() => ({
-  mockReadServiceEnvFile: vi.fn<() => Record<string, string>>(),
-  mockGetActiveCodexAuthPath: vi.fn<() => string | null>(),
-}));
+const { mockReadServiceEnvFile, mockGetActiveCodexAuthPath } = vi.hoisted(
+  () => ({
+    mockReadServiceEnvFile: vi.fn<() => Record<string, string>>(),
+    mockGetActiveCodexAuthPath: vi.fn<() => string | null>(),
+  }),
+);
 
 vi.mock('./config.js', () => ({
   GROUPS_DIR: '/tmp/hkclaw-test-groups',

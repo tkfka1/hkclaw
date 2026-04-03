@@ -10,7 +10,11 @@ import {
   writeDashboardRendererState,
 } from './unified-dashboard.js';
 
-const dashboardStateDir = path.join(process.cwd(), 'cache', 'unified-dashboard');
+const dashboardStateDir = path.join(
+  process.cwd(),
+  'cache',
+  'unified-dashboard',
+);
 
 afterEach(() => {
   fs.rmSync(dashboardStateDir, { recursive: true, force: true });

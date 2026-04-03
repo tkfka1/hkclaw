@@ -5,13 +5,11 @@ import { logger } from './logger.js';
 // ── Internal cache ──────────────────────────────────────────────
 
 let _cache: Record<string, string> | null = null;
-let _serviceCache:
-  | {
-      envFile: string;
-      mtimeMs: number;
-      values: Record<string, string>;
-    }
-  | null = null;
+let _serviceCache: {
+  envFile: string;
+  mtimeMs: number;
+  values: Record<string, string>;
+} | null = null;
 
 export const SERVICE_SCOPED_ENV_KEYS = [
   'ASSISTANT_NAME',

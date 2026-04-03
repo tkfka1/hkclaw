@@ -14,7 +14,10 @@ export const ASSISTANT_NAME = getEnv('ASSISTANT_NAME') || 'Andy';
 export const ASSISTANT_HAS_OWN_NUMBER =
   getBooleanEnv('ASSISTANT_HAS_OWN_NUMBER', false) ?? false;
 const rawServiceAgentType = getEnv('SERVICE_AGENT_TYPE');
-export const SERVICE_ID = normalizeServiceId(getEnv('SERVICE_ID'), ASSISTANT_NAME);
+export const SERVICE_ID = normalizeServiceId(
+  getEnv('SERVICE_ID'),
+  ASSISTANT_NAME,
+);
 export const SERVICE_AGENT_TYPE: AgentType = parseAgentType(
   rawServiceAgentType,
   ASSISTANT_NAME,
@@ -80,18 +83,14 @@ function escapeRegex(str: string): string {
 
 export function buildTriggerPattern(assistantName: string): RegExp {
   const escapedAssistantName = escapeRegex(assistantName.trim());
-  return new RegExp(
-    `^@${escapedAssistantName}(?=$|[^\\p{L}\\p{N}_])`,
-    'iu',
-  );
+  return new RegExp(`^@${escapedAssistantName}(?=$|[^\\p{L}\\p{N}_])`, 'iu');
 }
 
 export const TRIGGER_PATTERN = buildTriggerPattern(ASSISTANT_NAME);
 
 // Status dashboard: Discord channel ID for live agent status updates
-export const STATUS_CHANNEL_ID = parseDiscordChannelId(
-  getEnv('STATUS_CHANNEL_ID'),
-) || '';
+export const STATUS_CHANNEL_ID =
+  parseDiscordChannelId(getEnv('STATUS_CHANNEL_ID')) || '';
 export const STATUS_UPDATE_INTERVAL = 10000; // 10s
 export const USAGE_UPDATE_INTERVAL = 300000; // 5 minutes
 export const STATUS_SHOW_ROOMS =

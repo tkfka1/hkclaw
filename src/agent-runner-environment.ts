@@ -145,7 +145,8 @@ function prepareClaudeEnvironment(args: {
   }
   {
     // Token rotation takes priority over static .env value
-    const oauthToken = getCurrentToken() || args.envVars.CLAUDE_CODE_OAUTH_TOKEN;
+    const oauthToken =
+      getCurrentToken() || args.envVars.CLAUDE_CODE_OAUTH_TOKEN;
     if (oauthToken) {
       args.env.CLAUDE_CODE_OAUTH_TOKEN = oauthToken;
     }
@@ -193,13 +194,11 @@ function prepareCodexSessionEnvironment(args: {
   delete args.env.CODEX_OPENAI_API_KEY;
 
   const codexModel =
-    args.group.agentConfig?.codexModel ||
-    args.envVars.CODEX_MODEL;
+    args.group.agentConfig?.codexModel || args.envVars.CODEX_MODEL;
   if (codexModel) args.env.CODEX_MODEL = codexModel;
 
   const codexEffort =
-    args.group.agentConfig?.codexEffort ||
-    args.envVars.CODEX_EFFORT;
+    args.group.agentConfig?.codexEffort || args.envVars.CODEX_EFFORT;
   if (codexEffort) args.env.CODEX_EFFORT = codexEffort;
 
   const hostCodexDir = path.join(os.homedir(), '.codex');
@@ -359,7 +358,10 @@ function stripManagedTomlTables(
     }
   }
 
-  return keptLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return keptLines
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 export interface PreparedGroupEnvironment {

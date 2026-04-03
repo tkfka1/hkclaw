@@ -105,7 +105,8 @@ function getLegacyServiceIdMap(): Record<AgentType, string> {
   } catch (err) {
     logger.warn({ err }, 'Falling back to default legacy service id mapping');
     return {
-      'claude-code': SERVICE_AGENT_TYPE === 'claude-code' ? SERVICE_ID : 'assistant',
+      'claude-code':
+        SERVICE_AGENT_TYPE === 'claude-code' ? SERVICE_ID : 'assistant',
       codex: SERVICE_AGENT_TYPE === 'codex' ? SERVICE_ID : 'codex',
     };
   }
@@ -428,7 +429,9 @@ function createSchema(database: Database.Database): void {
   }
 
   try {
-    database.exec(`ALTER TABLE office_company_settings ADD COLUMN room_layouts_json TEXT`);
+    database.exec(
+      `ALTER TABLE office_company_settings ADD COLUMN room_layouts_json TEXT`,
+    );
   } catch {
     /* column already exists */
   }
@@ -626,8 +629,12 @@ function createSchema(database: Database.Database): void {
   const sessionCols = database
     .prepare('PRAGMA table_info(sessions)')
     .all() as Array<{ name: string }>;
-  const hasSessionServiceId = sessionCols.some((col) => col.name === 'service_id');
-  const hasSessionAgentType = sessionCols.some((col) => col.name === 'agent_type');
+  const hasSessionServiceId = sessionCols.some(
+    (col) => col.name === 'service_id',
+  );
+  const hasSessionAgentType = sessionCols.some(
+    (col) => col.name === 'agent_type',
+  );
   if (
     !sessionsSql ||
     !sessionsSql.includes('PRIMARY KEY (group_folder, service_id)')
@@ -649,7 +656,9 @@ function createSchema(database: Database.Database): void {
            ${
              hasSessionServiceId
                ? `COALESCE(NULLIF(service_id, ''), ${legacyServiceIdSql(hasSessionAgentType ? 'agent_type' : "'claude-code'")})`
-               : legacyServiceIdSql(hasSessionAgentType ? 'agent_type' : "'claude-code'")
+               : legacyServiceIdSql(
+                   hasSessionAgentType ? 'agent_type' : "'claude-code'",
+                 )
            },
            ${hasSessionAgentType ? "COALESCE(agent_type, 'claude-code')" : "'claude-code'"},
            session_id
@@ -1062,7 +1071,10 @@ export function getMessagesSinceSeq(
   return rows.map(normalizeMessageRow);
 }
 
-export function getRecentMessages(chatJid: string, limit: number = 120): NewMessage[] {
+export function getRecentMessages(
+  chatJid: string,
+  limit: number = 120,
+): NewMessage[] {
   const rows = db
     .prepare(
       `SELECT * FROM (
@@ -1590,7 +1602,9 @@ export function deleteSession(
   ).run(groupFolder, serviceId);
 }
 
-export function getAllSessions(serviceId: string = SERVICE_ID): Record<string, string> {
+export function getAllSessions(
+  serviceId: string = SERVICE_ID,
+): Record<string, string> {
   const rows = db
     .prepare(
       'SELECT group_folder, session_id FROM sessions WHERE service_id = ?',
@@ -1608,21 +1622,19 @@ export function getAllSessions(serviceId: string = SERVICE_ID): Record<string, s
 
 // --- Registered group accessors ---
 
-function mapRegisteredGroupRow(
-  row: {
-    jid: string;
-    name: string;
-    folder: string;
-    trigger_pattern: string;
-    added_at: string;
-    agent_config: string | null;
-    requires_trigger: number | null;
-    is_main: number | null;
-    service_id: string | null;
-    agent_type: string | null;
-    work_dir: string | null;
-  },
-): RegisteredGroup & { jid: string } {
+function mapRegisteredGroupRow(row: {
+  jid: string;
+  name: string;
+  folder: string;
+  trigger_pattern: string;
+  added_at: string;
+  agent_config: string | null;
+  requires_trigger: number | null;
+  is_main: number | null;
+  service_id: string | null;
+  agent_type: string | null;
+  work_dir: string | null;
+}): RegisteredGroup & { jid: string } {
   return {
     jid: row.jid,
     name: row.name,
@@ -1709,10 +1721,9 @@ export function deleteRegisteredGroup(
   jid: string,
   serviceId: string = SERVICE_ID,
 ): void {
-  db.prepare('DELETE FROM registered_groups WHERE jid = ? AND service_id = ?').run(
-    jid,
-    serviceId,
-  );
+  db.prepare(
+    'DELETE FROM registered_groups WHERE jid = ? AND service_id = ?',
+  ).run(jid, serviceId);
 }
 
 export function updateRegisteredGroupName(jid: string, name: string): void {
@@ -1952,14 +1963,14 @@ export function deleteOfficeTeam(teamId: string): void {
 
 export function getOfficeCompanySettings(): OfficeCompanySettings | null {
   return (
-    db
+    (db
       .prepare(
         `SELECT company_name, office_title, office_subtitle, room_layouts_json, updated_at
          FROM office_company_settings
          WHERE id = 1`,
       )
-      .get() as OfficeCompanySettings | undefined
-  ) || null;
+      .get() as OfficeCompanySettings | undefined) || null
+  );
 }
 
 export function upsertOfficeCompanySettings(input: {
@@ -2104,9 +2115,9 @@ export function getAdminUserByUsername(
 }
 
 export function countAdminUsers(): number {
-  const row = db
-    .prepare('SELECT COUNT(*) AS count FROM admin_users')
-    .get() as { count: number } | undefined;
+  const row = db.prepare('SELECT COUNT(*) AS count FROM admin_users').get() as
+    | { count: number }
+    | undefined;
   return row?.count ?? 0;
 }
 
@@ -2196,7 +2207,9 @@ export function deleteAdminSessionByTokenHash(tokenHash: string): void {
   db.prepare('DELETE FROM admin_sessions WHERE token_hash = ?').run(tokenHash);
 }
 
-export function deleteExpiredAdminSessions(now: string = new Date().toISOString()): void {
+export function deleteExpiredAdminSessions(
+  now: string = new Date().toISOString(),
+): void {
   db.prepare('DELETE FROM admin_sessions WHERE expires_at <= ?').run(now);
 }
 

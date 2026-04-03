@@ -45,7 +45,10 @@ function getAdminAssetsDir(projectRoot: string): string {
 }
 
 function getMapMetaPath(projectRoot: string): string {
-  return path.join(getAdminAssetsDir(projectRoot), 'hkclaw-office-map-meta.json');
+  return path.join(
+    getAdminAssetsDir(projectRoot),
+    'hkclaw-office-map-meta.json',
+  );
 }
 
 function getBackupDir(projectRoot: string): string {
@@ -106,12 +109,16 @@ function readMeta(projectRoot: string): AdminMapMeta {
   }
 
   try {
-    const parsed = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) as Partial<AdminMapMeta>;
+    const parsed = JSON.parse(
+      fs.readFileSync(metaPath, 'utf-8'),
+    ) as Partial<AdminMapMeta>;
     return {
       tmjFile: parsed.tmjFile || DEFAULT_META.tmjFile,
       projectFile: parsed.projectFile || DEFAULT_META.projectFile,
       tilesetFile: parsed.tilesetFile || DEFAULT_META.tilesetFile,
-      tilesetName: parsed.tilesetName || inferTilesetName(projectRoot, parsed.tmjFile || DEFAULT_META.tmjFile),
+      tilesetName:
+        parsed.tilesetName ||
+        inferTilesetName(projectRoot, parsed.tmjFile || DEFAULT_META.tmjFile),
     };
   } catch {
     return inferMetaFromDefaults(projectRoot);

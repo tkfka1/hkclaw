@@ -99,7 +99,9 @@ describe('admin web auth helpers', () => {
     const adminGamePage = renderAdminGamePage();
 
     expect(loginPage).toContain('운영실 입장');
-    expect(loginPage).toContain('HKClaw 운영실은 브라우저 로그인으로 보호됩니다.');
+    expect(loginPage).toContain(
+      'HKClaw 운영실은 브라우저 로그인으로 보호됩니다.',
+    );
     expect(adminGamePage).toContain('id="stage-overview"');
     expect(adminGamePage).toContain('data-action="camera-overview"');
     expect(adminGamePage).toContain('data-action="camera-focus"');
@@ -152,8 +154,12 @@ describe('admin web auth helpers', () => {
 
     expect(adminGamePage).toContain('relicInventory: []');
     expect(adminGamePage).toContain('equippedRelicIds: []');
-    expect(adminGamePage).toContain('relicLoadouts: createDefaultRelicLoadouts()');
-    expect(adminGamePage).toContain('rewardRelic = relicDefForEncounter(encounter.id)');
+    expect(adminGamePage).toContain(
+      'relicLoadouts: createDefaultRelicLoadouts()',
+    );
+    expect(adminGamePage).toContain(
+      'rewardRelic = relicDefForEncounter(encounter.id)',
+    );
     expect(adminGamePage).toContain("'unequip-relic' : 'equip-relic'");
     expect(adminGamePage).toContain('equippedRelicBonuses().power');
   });
@@ -164,8 +170,8 @@ describe('admin web auth helpers', () => {
     expect(adminGamePage).toContain("savedAt: ''");
     expect(adminGamePage).toContain('function saveRelicLoadout(slotId)');
     expect(adminGamePage).toContain('function loadRelicLoadout(slotId)');
-    expect(adminGamePage).toContain("data-action=\"save-relic-loadout\"");
-    expect(adminGamePage).toContain("data-action=\"load-relic-loadout\"");
+    expect(adminGamePage).toContain('data-action="save-relic-loadout"');
+    expect(adminGamePage).toContain('data-action="load-relic-loadout"');
     expect(adminGamePage).toContain('Relic Loadout');
   });
 
@@ -175,7 +181,11 @@ describe('admin web auth helpers', () => {
     expect(adminGamePage).toContain('overflow-y: auto;');
     expect(adminGamePage).toContain('scrollbar-gutter: stable;');
     expect(adminGamePage).toContain('function syncStageHeaderLayout()');
-    expect(adminGamePage).toContain('header.style.paddingBottom = `${basePaddingBottom + overflow}px`;');
-    expect(adminGamePage).toContain("window.addEventListener('resize', () => {");
+    expect(adminGamePage).toContain(
+      'header.style.paddingBottom = `${basePaddingBottom + overflow}px`;',
+    );
+    expect(adminGamePage).toContain(
+      "window.addEventListener('resize', () => {",
+    );
   });
 });

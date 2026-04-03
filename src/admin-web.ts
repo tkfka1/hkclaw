@@ -1,10 +1,5 @@
 import http from 'http';
-import {
-  createHash,
-  randomBytes,
-  scryptSync,
-  timingSafeEqual,
-} from 'crypto';
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -214,17 +209,28 @@ export function getAdminBootstrapConfig(input?: {
   username?: string;
   password?: string;
 }): AdminBootstrapConfig | null {
-  const password = (input?.password ?? getEnv('HKCLAW_ADMIN_PASSWORD') ?? '').trim();
+  const password = (
+    input?.password ??
+    getEnv('HKCLAW_ADMIN_PASSWORD') ??
+    ''
+  ).trim();
   if (!password) return null;
 
-  const username = (input?.username ?? getEnv('HKCLAW_ADMIN_USERNAME') ?? 'admin').trim();
+  const username = (
+    input?.username ??
+    getEnv('HKCLAW_ADMIN_USERNAME') ??
+    'admin'
+  ).trim();
   return {
     username: username || 'admin',
     password,
   };
 }
 
-export function hashAdminPassword(password: string, salt = randomBytes(16).toString('hex')): string {
+export function hashAdminPassword(
+  password: string,
+  salt = randomBytes(16).toString('hex'),
+): string {
   const digest = scryptSync(password, salt, 64).toString('hex');
   return [ADMIN_PASSWORD_HASH_PREFIX, salt, digest].join('$');
 }
@@ -278,9 +284,7 @@ function parseCookieHeader(header: string | undefined): Record<string, string> {
 
 function buildSessionCookie(token: string, expiresAt: string): string {
   const expires = new Date(expiresAt).toUTCString();
-  return (
-    `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Expires=${expires}`
-  );
+  return `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Expires=${expires}`;
 }
 
 function buildExpiredSessionCookie(): string {
@@ -2465,7 +2469,8 @@ export async function startAdminWebServer(
       if (req.method === 'POST' && url.pathname === '/api/admin/login') {
         if (!authConfigured) {
           sendJson(res, 503, {
-            error: 'Admin login is not configured. Set HKCLAW_ADMIN_PASSWORD and restart the service.',
+            error:
+              'Admin login is not configured. Set HKCLAW_ADMIN_PASSWORD and restart the service.',
           });
           return;
         }
@@ -2506,12 +2511,16 @@ export async function startAdminWebServer(
           return;
         }
         sendJson(res, 503, {
-          error: 'Admin login is not configured. Set HKCLAW_ADMIN_PASSWORD and restart the service.',
+          error:
+            'Admin login is not configured. Set HKCLAW_ADMIN_PASSWORD and restart the service.',
         });
         return;
       }
 
-      if (!isAuthorized && !isPublicAdminRoute(req.method || 'GET', url.pathname)) {
+      if (
+        !isAuthorized &&
+        !isPublicAdminRoute(req.method || 'GET', url.pathname)
+      ) {
         if (req.method === 'GET' && url.pathname === '/') {
           res.writeHead(302, { location: '/login' });
           res.end();
@@ -2595,7 +2604,9 @@ export async function startAdminWebServer(
       }
 
       if (req.method === 'GET' && url.pathname === '/api/admin/services/logs') {
-        const serviceId = String(url.searchParams.get('serviceId') || '').trim();
+        const serviceId = String(
+          url.searchParams.get('serviceId') || '',
+        ).trim();
         const maxLines = Number(url.searchParams.get('lines') || '120');
         if (!serviceId) {
           throw new InvalidAdminInputError('serviceId is required');

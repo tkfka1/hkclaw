@@ -36,7 +36,10 @@ import {
   getCodexAccountCount,
   markCodexTokenHealthy,
 } from './codex-token-rotation.js';
-import { getCurrentServiceTemperament, applyServiceTemperament } from './service-temperament.js';
+import {
+  getCurrentServiceTemperament,
+  applyServiceTemperament,
+} from './service-temperament.js';
 import type {
   AgentTriggerReason,
   CodexRotationReason,

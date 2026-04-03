@@ -15,9 +15,8 @@ describe('status dashboard snapshots', () => {
   });
 
   it('writes snapshots by service id and reads them back', async () => {
-    const { readStatusSnapshots, writeStatusSnapshot } = await import(
-      './status-dashboard.js'
-    );
+    const { readStatusSnapshots, writeStatusSnapshot } =
+      await import('./status-dashboard.js');
 
     writeStatusSnapshot({
       serviceId: 'normal',

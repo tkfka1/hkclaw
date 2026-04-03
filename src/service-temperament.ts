@@ -79,7 +79,9 @@ const BUILTIN_TEMPERAMENTS: TemperamentDefinition[] = [
   },
 ];
 
-export function normalizeTemperamentId(value: string | undefined | null): string {
+export function normalizeTemperamentId(
+  value: string | undefined | null,
+): string {
   const normalized = String(value || '')
     .trim()
     .toLowerCase()
@@ -89,7 +91,10 @@ export function normalizeTemperamentId(value: string | undefined | null): string
   return normalized || 'normal';
 }
 
-function resolveDataPath(projectRoot: string = process.cwd(), fileName: string): string {
+function resolveDataPath(
+  projectRoot: string = process.cwd(),
+  fileName: string,
+): string {
   if (projectRoot === process.cwd()) {
     return path.join(DATA_DIR, fileName);
   }
@@ -108,7 +113,9 @@ export function getTemperamentDefinitionStorePath(
   return resolveDataPath(projectRoot, 'temperaments.json');
 }
 
-function readAssignments(projectRoot?: string): ServiceTemperamentAssignmentStore {
+function readAssignments(
+  projectRoot?: string,
+): ServiceTemperamentAssignmentStore {
   return (
     readJsonFile<ServiceTemperamentAssignmentStore>(
       getServiceTemperamentStorePath(projectRoot),
@@ -257,7 +264,9 @@ export function deleteTemperamentDefinition(
   temperamentId: string,
 ): void {
   const normalizedId = normalizeTemperamentId(temperamentId);
-  if (BUILTIN_TEMPERAMENTS.some((entry) => entry.temperamentId === normalizedId)) {
+  if (
+    BUILTIN_TEMPERAMENTS.some((entry) => entry.temperamentId === normalizedId)
+  ) {
     throw new Error('기본 성향은 삭제할 수 없습니다.');
   }
   const store = readDefinitions(projectRoot);

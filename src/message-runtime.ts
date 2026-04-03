@@ -474,7 +474,10 @@ export function createMessageRuntime(deps: MessageRuntimeDeps): {
             }
 
             if (
-              shouldSkipBotOnlyCollaboration(chatJid, processableGroupMessages) &&
+              shouldSkipBotOnlyCollaboration(
+                chatJid,
+                processableGroupMessages,
+              ) &&
               !processableGroupMessages.some((message) =>
                 hasAllowedTriggerMessage({
                   chatJid,
@@ -542,7 +545,12 @@ export function createMessageRuntime(deps: MessageRuntimeDeps): {
             );
             const pendingMessages = filterLoopingPairedBotMessages(
               chatJid,
-              getProcessableMessages(chatJid, rawPendingMessages, channel, group),
+              getProcessableMessages(
+                chatJid,
+                rawPendingMessages,
+                channel,
+                group,
+              ),
               FAILURE_FINAL_TEXT,
             );
             const messagesToSend =

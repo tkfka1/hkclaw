@@ -40,11 +40,13 @@ describe('temperament definitions', () => {
       prompt: 'Be severe.',
     });
 
+    expect(fs.existsSync(getTemperamentDefinitionStorePath(projectRoot))).toBe(
+      true,
+    );
     expect(
-      fs.existsSync(getTemperamentDefinitionStorePath(projectRoot)),
-    ).toBe(true);
-    expect(
-      listTemperaments(projectRoot).find((entry) => entry.temperamentId === 'critic'),
+      listTemperaments(projectRoot).find(
+        (entry) => entry.temperamentId === 'critic',
+      ),
     ).toMatchObject({
       temperamentId: 'critic',
       name: 'critic',
@@ -64,7 +66,9 @@ describe('temperament definitions', () => {
     deleteTemperamentDefinition(projectRoot, 'critic');
 
     expect(
-      listTemperaments(projectRoot).find((entry) => entry.temperamentId === 'critic'),
+      listTemperaments(projectRoot).find(
+        (entry) => entry.temperamentId === 'critic',
+      ),
     ).toBeUndefined();
   });
 });

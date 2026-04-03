@@ -26,7 +26,8 @@ export function upsertEnvContent(
 
   const pending = new Map(entries);
   const handled = new Set<string>();
-  const lines = content === '' ? [] : content.replace(/\r\n/g, '\n').split('\n');
+  const lines =
+    content === '' ? [] : content.replace(/\r\n/g, '\n').split('\n');
   const output: string[] = [];
 
   for (const line of lines) {
@@ -81,10 +82,7 @@ export function upsertEnvContent(
   return normalized;
 }
 
-export function upsertEnvFile(
-  filePath: string,
-  updates: EnvFileUpdates,
-): void {
+export function upsertEnvFile(filePath: string, updates: EnvFileUpdates): void {
   const current = fs.existsSync(filePath)
     ? fs.readFileSync(filePath, 'utf-8')
     : '';
