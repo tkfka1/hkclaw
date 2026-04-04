@@ -254,8 +254,18 @@ async function refreshChannelMeta(
   }
 }
 
-function getAgentDisplayName(agentType: 'claude-code' | 'codex'): string {
-  return agentType === 'codex' ? '코덱스' : '클코';
+function getAgentDisplayName(agentType: AgentType): string {
+  switch (agentType) {
+    case 'codex':
+      return '코덱스';
+    case 'gemini-cli':
+      return '제미니';
+    case 'local-llm':
+      return '로컬';
+    case 'claude-code':
+    default:
+      return '클코';
+  }
 }
 
 function formatRoomName(
@@ -297,9 +307,7 @@ function writeLocalStatusSnapshot(opts: UnifiedDashboardOptions): void {
           jid: status.jid,
           name: group.name,
           folder: group.folder,
-          agentType: (group.agentType || opts.serviceAgentType) as
-            | 'claude-code'
-            | 'codex',
+          agentType: (group.agentType || opts.serviceAgentType) as AgentType,
           status: status.status,
           elapsedMs: status.elapsedMs,
           pendingMessages: status.pendingMessages,
@@ -311,7 +319,7 @@ function writeLocalStatusSnapshot(opts: UnifiedDashboardOptions): void {
       jid: string;
       name: string;
       folder: string;
-      agentType: 'claude-code' | 'codex';
+      agentType: AgentType;
       status: 'processing' | 'waiting' | 'inactive';
       elapsedMs: number | null;
       pendingMessages: boolean;
@@ -336,7 +344,7 @@ function buildStatusContent(): string {
 
   interface RoomEntry {
     serviceId: string;
-    agentType: 'claude-code' | 'codex';
+    agentType: AgentType;
     status: 'processing' | 'waiting' | 'inactive';
     elapsedMs: number | null;
     pendingMessages: boolean;
@@ -349,7 +357,7 @@ function buildStatusContent(): string {
   const byJid = new Map<string, RoomEntry[]>();
 
   for (const snapshot of snapshots) {
-    const agentType = snapshot.agentType as 'claude-code' | 'codex';
+    const agentType = snapshot.agentType as AgentType;
     for (const entry of snapshot.entries) {
       const existing = byJid.get(entry.jid) || [];
       existing.push({
@@ -414,7 +422,9 @@ function buildStatusContent(): string {
           ? a.serviceId.localeCompare(b.serviceId)
           : a.agentType === 'claude-code'
             ? -1
-            : 1,
+            : b.agentType === 'claude-code'
+              ? 1
+              : a.agentType.localeCompare(b.agentType),
       );
       const duplicateTypes = new Set<RoomEntry['agentType']>();
       for (const agent of room.agents) {

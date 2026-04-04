@@ -1,6 +1,6 @@
 import { isValidGroupFolder } from './group-folder.js';
 import { normalizeDiscordJid } from './discord-channel-id.js';
-import { RegisteredGroup } from './types.js';
+import { AgentType, RegisteredGroup } from './types.js';
 
 export function parseDiscordVoiceChannelIds(raw: string | undefined): string[] {
   if (!raw) return [];
@@ -65,7 +65,7 @@ export function parseDiscordVoiceValueMap(
 export function buildDiscordVoiceAliases(args: {
   registeredGroups: Record<string, RegisteredGroup>;
   routeMap: Map<string, string>;
-  agentType: 'claude-code' | 'codex';
+  agentType: AgentType;
   folderMap?: Map<string, string>;
   nameMap?: Map<string, string>;
   defaultFolder?: string | undefined;

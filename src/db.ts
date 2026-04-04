@@ -108,6 +108,10 @@ function getLegacyServiceIdMap(): Record<AgentType, string> {
       'claude-code':
         SERVICE_AGENT_TYPE === 'claude-code' ? SERVICE_ID : 'assistant',
       codex: SERVICE_AGENT_TYPE === 'codex' ? SERVICE_ID : 'codex',
+      'gemini-cli':
+        SERVICE_AGENT_TYPE === 'gemini-cli' ? SERVICE_ID : 'gemini',
+      'local-llm':
+        SERVICE_AGENT_TYPE === 'local-llm' ? SERVICE_ID : 'local-llm',
     };
   }
 }

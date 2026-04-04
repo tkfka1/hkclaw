@@ -19,6 +19,7 @@ import {
   getOfficeCompanySettings,
   getOfficeTeam,
   getOfficeTeams,
+  getOpenWorkItem,
   getRecentMessages,
   getRegisteredGroup,
   getRegisteredGroupAssignments,
@@ -29,7 +30,7 @@ import {
   type ChatInfo,
 } from './db.js';
 import { upsertEnvFile } from './env-file-editor.js';
-import { parseEnvFilePath, SERVICE_SCOPED_ENV_KEYS } from './env.js';
+import { parseEnvFilePath } from './env.js';
 import { parseDiscordChannelId } from './discord-channel-id.js';
 import {
   isValidGroupFolder,
@@ -38,6 +39,12 @@ import {
   resolveGroupSessionsPath,
 } from './group-folder.js';
 import { logger } from './logger.js';
+import {
+  buildEffectiveServiceEnv as buildEffectiveManagedServiceEnv,
+  diagnoseServiceHealth,
+  summarizeServiceHealthConfig,
+  type ServiceDiagnostic,
+} from './service-health.js';
 import {
   discoverConfiguredServices,
   type DiscoveredService,
@@ -118,6 +125,12 @@ const PRIMARY_SERVICE_ENV_KEYS = [
   'CODEX_MODEL',
   'CODEX_EFFORT',
   'CODEX_USE_HOME_AUTH',
+  'GEMINI_API_KEY',
+  'GEMINI_MODEL',
+  'GEMINI_CLI_PATH',
+  'LOCAL_LLM_BASE_URL',
+  'LOCAL_LLM_MODEL',
+  'LOCAL_LLM_API_KEY',
   'FALLBACK_ENABLED',
   'FALLBACK_PROVIDER_NAME',
   'FALLBACK_BASE_URL',
@@ -126,8 +139,6 @@ const PRIMARY_SERVICE_ENV_KEYS = [
   'FALLBACK_SMALL_MODEL',
   'FALLBACK_COOLDOWN_MS',
 ] as const;
-const SERVICE_SCOPED_ENV_KEY_SET = new Set<string>(SERVICE_SCOPED_ENV_KEYS);
-
 export interface ServiceEnvSummary {
   assistantName: string;
   serviceId: string;
@@ -161,6 +172,10 @@ export interface ServiceEnvSummary {
   claudeCodeOauthTokensValue: string;
   codexAuthJsonConfigured: boolean;
   codexAuthJsonValue: string;
+  geminiApiKeyConfigured: boolean;
+  geminiApiKeyValue: string;
+  geminiModel: string;
+  geminiCliPath: string;
   openAiApiKeyConfigured: boolean;
   openAiApiKeyValue: string;
   groqApiKeyConfigured: boolean;
@@ -168,6 +183,7 @@ export interface ServiceEnvSummary {
   groqTranscriptionModel: string;
   openAiTranscriptionModel: string;
   transcriptionLanguage: string;
+  anthropicApiKeyConfigured: boolean;
   fallbackEnabled: '' | 'true' | 'false';
   fallbackProviderName: string;
   fallbackBaseUrl: string;
@@ -178,6 +194,11 @@ export interface ServiceEnvSummary {
   fallbackCooldownMs: string;
   codexModel: string;
   codexEffort: string;
+  codexUseHomeAuth: boolean;
+  localLlmBaseUrl: string;
+  localLlmModel: string;
+  localLlmApiKeyConfigured: boolean;
+  localLlmApiKeyValue: string;
   temperamentId: string;
   temperamentName: string;
   temperamentPrompt: string;
@@ -211,6 +232,7 @@ export interface AdminServiceState {
     stale: boolean;
   };
   assignmentCount: number;
+  diagnostics: ServiceDiagnostic[];
   config: ServiceEnvSummary;
 }
 
@@ -232,6 +254,50 @@ export interface AdminChannelState {
   channel: string;
   isGroup: boolean;
   lastMessageTime: string | null;
+  customerFlow:
+    | 'idle'
+    | 'customer-arrived'
+    | 'order-taking'
+    | 'cooking'
+    | 'handoff-ready'
+    | 'served';
+  customerSummary: string;
+  latestInboundAt: string | null;
+  latestOutboundAt: string | null;
+  activeServiceIds: string[];
+  openWorkItemCount: number;
+  assignments: AdminChannelAssignment[];
+}
+
+export interface AdminCounterState {
+  counterId: string;
+  jid: string;
+  name: string;
+  stationName: string;
+  source: 'manual' | 'channel';
+  teamId: string | null;
+  folder: string | null;
+  requiresMention: boolean;
+  layoutLeft: number | null;
+  layoutTop: number | null;
+  layoutWidth: number | null;
+  layoutHeight: number | null;
+  color: string;
+  customerFlow:
+    | 'idle'
+    | 'customer-arrived'
+    | 'order-taking'
+    | 'cooking'
+    | 'handoff-ready'
+    | 'served';
+  customerSummary: string;
+  latestInboundAt: string | null;
+  latestOutboundAt: string | null;
+  activeServiceIds: string[];
+  assignedServiceIds: string[];
+  memberServiceIds: string[];
+  openWorkItemCount: number;
+  assignmentCount: number;
   assignments: AdminChannelAssignment[];
 }
 
@@ -249,6 +315,7 @@ export interface AdminTeamState {
   folderMixed: boolean;
   source: 'manual' | 'channel';
   color: string;
+  assignedServiceIds: string[];
   memberServiceIds: string[];
   activeServiceIds: string[];
 }
@@ -300,6 +367,7 @@ export interface AdminState {
     codex: AdminCodexUsageState;
   };
   services: AdminServiceState[];
+  counters: AdminCounterState[];
   channels: AdminChannelState[];
   teams: AdminTeamState[];
   temperaments: Array<{
@@ -347,6 +415,10 @@ export interface ServiceConfigInput {
   clearClaudeCodeOauthTokens?: boolean;
   codexAuthJson?: string;
   clearCodexAuthJson?: boolean;
+  geminiApiKey?: string;
+  clearGeminiApiKey?: boolean;
+  geminiModel?: string;
+  geminiCliPath?: string;
   openAiApiKey?: string;
   clearOpenAiApiKey?: boolean;
   groqApiKey?: string;
@@ -356,6 +428,10 @@ export interface ServiceConfigInput {
   transcriptionLanguage?: string;
   codexModel?: string;
   codexEffort?: string;
+  localLlmBaseUrl?: string;
+  localLlmModel?: string;
+  localLlmApiKey?: string;
+  clearLocalLlmApiKey?: boolean;
   fallbackEnabled?: string;
   fallbackProviderName?: string;
   fallbackBaseUrl?: string;
@@ -409,6 +485,8 @@ export interface OfficeCompanySettingsInput {
   officeTitle?: string;
   officeSubtitle?: string;
 }
+
+const DEFAULT_STORE_ROOM_LAYOUTS: Record<string, AdminRoomLayoutState> = {};
 
 function normalizeOfficeRoomId(roomId: string): string {
   const normalizedRoomId = roomId.trim();
@@ -571,22 +649,24 @@ function isDiscordChat(chat: {
   return chat.channel === 'discord' || chat.jid.startsWith('dc:');
 }
 
+function isValidAdminChannelJid(jid: string): boolean {
+  if (jid.startsWith('dc:')) {
+    return Boolean(parseDiscordChannelId(jid));
+  }
+  return true;
+}
+
 function summarizeServiceEnv(
   projectRoot: string,
   service: DiscoveredService,
   baseEnvOverride?: Record<string, string>,
 ): ServiceEnvSummary {
-  const baseEnv =
-    baseEnvOverride || parseEnvFilePath(path.join(projectRoot, '.env'));
-  const overlayEnv = service.envOverlayPath
-    ? parseEnvFilePath(service.envOverlayPath)
-    : {};
-  const effective = buildManagedServiceEnv(
-    baseEnv,
-    overlayEnv,
-    service.extraEnv,
-    !service.envOverlayPath,
+  const effective = buildEffectiveManagedServiceEnv(
+    projectRoot,
+    service,
+    baseEnvOverride,
   );
+  const health = summarizeServiceHealthConfig(effective);
   const temperament = getServiceTemperament(projectRoot, service.serviceId);
   const fallbackEnabledRaw = (effective.FALLBACK_ENABLED || '')
     .trim()
@@ -630,19 +710,22 @@ function summarizeServiceEnv(
     edgeTtsTimeoutMs: effective.DISCORD_EDGE_TTS_TIMEOUT_MS || '',
     edgeTtsMaxChars: effective.DISCORD_EDGE_TTS_MAX_CHARS || '',
     voiceOutputBitrate: effective.DISCORD_VOICE_OUTPUT_BITRATE || '',
-    botTokenConfigured: Boolean(effective.DISCORD_BOT_TOKEN),
+    botTokenConfigured: health.botTokenConfigured,
     botTokenValue: effective.DISCORD_BOT_TOKEN || '',
+    anthropicApiKeyConfigured: health.anthropicApiKeyConfigured,
     anthropicBaseUrl: effective.ANTHROPIC_BASE_URL || '',
-    anthropicAuthTokenConfigured: Boolean(effective.ANTHROPIC_AUTH_TOKEN),
+    anthropicAuthTokenConfigured: health.anthropicAuthTokenConfigured,
     anthropicAuthTokenValue: effective.ANTHROPIC_AUTH_TOKEN || '',
-    claudeCodeOauthTokenConfigured: Boolean(effective.CLAUDE_CODE_OAUTH_TOKEN),
+    claudeCodeOauthTokenConfigured: health.claudeCodeOauthTokenConfigured,
     claudeCodeOauthTokenValue: effective.CLAUDE_CODE_OAUTH_TOKEN || '',
-    claudeCodeOauthTokensConfigured: Boolean(
-      effective.CLAUDE_CODE_OAUTH_TOKENS,
-    ),
+    claudeCodeOauthTokensConfigured: health.claudeCodeOauthTokensConfigured,
     claudeCodeOauthTokensValue: effective.CLAUDE_CODE_OAUTH_TOKENS || '',
-    codexAuthJsonConfigured: Boolean(effective.CODEX_AUTH_JSON_B64),
+    codexAuthJsonConfigured: health.codexAuthJsonConfigured,
     codexAuthJsonValue: decodeCodexAuthEnvValue(effective.CODEX_AUTH_JSON_B64),
+    geminiApiKeyConfigured: health.geminiApiKeyConfigured,
+    geminiApiKeyValue: effective.GEMINI_API_KEY || '',
+    geminiModel: effective.GEMINI_MODEL || '',
+    geminiCliPath: effective.GEMINI_CLI_PATH || '',
     openAiApiKeyConfigured: Boolean(effective.OPENAI_API_KEY),
     openAiApiKeyValue: effective.OPENAI_API_KEY || '',
     groqApiKeyConfigured: Boolean(effective.GROQ_API_KEY),
@@ -661,6 +744,12 @@ function summarizeServiceEnv(
     fallbackCooldownMs: effective.FALLBACK_COOLDOWN_MS || '',
     codexModel: effective.CODEX_MODEL || '',
     codexEffort: effective.CODEX_EFFORT || '',
+    codexUseHomeAuth: health.codexUseHomeAuth,
+    localLlmBaseUrl:
+      effective.LOCAL_LLM_BASE_URL || 'http://127.0.0.1:11434/v1',
+    localLlmModel: effective.LOCAL_LLM_MODEL || '',
+    localLlmApiKeyConfigured: health.localLlmApiKeyConfigured,
+    localLlmApiKeyValue: effective.LOCAL_LLM_API_KEY || '',
     temperamentId: temperament.temperamentId,
     temperamentName: temperament.temperamentName,
     temperamentPrompt: temperament.prompt,
@@ -671,42 +760,7 @@ function buildEffectiveServiceEnv(
   projectRoot: string,
   service: DiscoveredService,
 ): Record<string, string> {
-  const baseEnv = parseEnvFilePath(path.join(projectRoot, '.env'));
-  const overlayEnv = service.envOverlayPath
-    ? parseEnvFilePath(service.envOverlayPath)
-    : {};
-
-  return buildManagedServiceEnv(
-    baseEnv,
-    overlayEnv,
-    service.extraEnv,
-    !service.envOverlayPath,
-  );
-}
-
-function stripServiceScopedEnv(
-  env: Record<string, string | undefined>,
-): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(env).filter(
-      (entry): entry is [string, string] =>
-        entry[1] !== undefined && !SERVICE_SCOPED_ENV_KEY_SET.has(entry[0]),
-    ),
-  );
-}
-
-function buildManagedServiceEnv(
-  baseEnv: Record<string, string>,
-  overlayEnv: Record<string, string>,
-  extraEnv: Record<string, string>,
-  allowBaseScopedEnv = false,
-): Record<string, string> {
-  return {
-    ...stripServiceScopedEnv(process.env as Record<string, string | undefined>),
-    ...(allowBaseScopedEnv ? baseEnv : stripServiceScopedEnv(baseEnv)),
-    ...overlayEnv,
-    ...extraEnv,
-  };
+  return buildEffectiveManagedServiceEnv(projectRoot, service);
 }
 
 function pickPrimaryServiceEnv(
@@ -1070,9 +1124,12 @@ function buildChannelAssignments(
   const assignments = getRegisteredGroupAssignments({
     allServices: true,
   }).filter((assignment) =>
-    isDiscordChat({ jid: assignment.jid, channel: assignment.channel }),
+    isDiscordChat({ jid: assignment.jid, channel: assignment.channel }) &&
+    isValidAdminChannelJid(assignment.jid),
   );
-  const chats = getAllChats().filter(isDiscordChat);
+  const chats = getAllChats().filter(
+    (chat) => isDiscordChat(chat) && isValidAdminChannelJid(chat.jid),
+  );
   const chatsByJid = new Map(chats.map((chat) => [chat.jid, chat]));
   const channels = new Map<string, AdminChannelState>();
 
@@ -1083,6 +1140,12 @@ function buildChannelAssignments(
       channel: chat.channel || (chat.jid.startsWith('dc:') ? 'discord' : ''),
       isGroup: chat.is_group === 1,
       lastMessageTime: chat.last_message_time || null,
+      customerFlow: 'idle',
+      customerSummary: '',
+      latestInboundAt: null,
+      latestOutboundAt: null,
+      activeServiceIds: [],
+      openWorkItemCount: 0,
       assignments: [],
     });
   }
@@ -1096,6 +1159,12 @@ function buildChannelAssignments(
         (assignment.jid.startsWith('dc:') ? 'discord' : ''),
       isGroup: assignment.isGroup,
       lastMessageTime: assignment.lastMessageTime,
+      customerFlow: 'idle',
+      customerSummary: '',
+      latestInboundAt: null,
+      latestOutboundAt: null,
+      activeServiceIds: [],
+      openWorkItemCount: 0,
       assignments: [],
     };
     const service = serviceById.get(assignment.serviceId || '');
@@ -1133,6 +1202,12 @@ function buildChannelAssignments(
       channel: chat?.channel || 'discord',
       isGroup: chat?.is_group === 1,
       lastMessageTime: chat?.last_message_time || null,
+      customerFlow: 'idle',
+      customerSummary: '',
+      latestInboundAt: null,
+      latestOutboundAt: null,
+      activeServiceIds: [],
+      openWorkItemCount: 0,
       assignments: [],
     };
 
@@ -1173,6 +1248,111 @@ function buildChannelAssignments(
       if (timeA !== timeB) return timeB - timeA;
       return a.name.localeCompare(b.name);
     });
+}
+
+function deriveChannelCustomerFlow(args: {
+  channel: AdminChannelState;
+  services: AdminServiceState[];
+}): Pick<
+  AdminChannelState,
+  | 'customerFlow'
+  | 'customerSummary'
+  | 'latestInboundAt'
+  | 'latestOutboundAt'
+  | 'activeServiceIds'
+  | 'openWorkItemCount'
+> {
+  const recentMessages = getRecentMessages(args.channel.jid, 40);
+  const latestInbound =
+    [...recentMessages]
+      .reverse()
+      .find((message) => !message.is_bot_message && !message.is_from_me) || null;
+  const latestOutbound =
+    [...recentMessages]
+      .reverse()
+      .find((message) => message.is_bot_message || message.is_from_me) || null;
+  const activeServices = args.services.filter(
+    (service) =>
+      service.role !== 'dashboard' &&
+      service.runtime.running &&
+      service.currentJid === args.channel.jid,
+  );
+  const activeServiceIds = activeServices.map((service) => service.serviceId);
+  const openWorkItems = args.channel.assignments
+    .filter((assignment) => assignment.kind === 'group')
+    .map((assignment) =>
+      getOpenWorkItem(
+        args.channel.jid,
+        assignment.agentType,
+        assignment.serviceId,
+      ),
+    )
+    .filter(Boolean);
+  const openWorkItemCount = openWorkItems.length;
+
+  if (openWorkItemCount > 0) {
+    return {
+      customerFlow: 'handoff-ready',
+      customerSummary:
+        '음식은 완성됐고 손님에게 건네기 직전입니다. 응답 전달을 기다리는 상태입니다.',
+      latestInboundAt: latestInbound?.timestamp || null,
+      latestOutboundAt: latestOutbound?.timestamp || null,
+      activeServiceIds,
+      openWorkItemCount,
+    };
+  }
+
+  if (activeServices.length > 0) {
+    return {
+      customerFlow: latestOutbound ? 'cooking' : 'order-taking',
+      customerSummary: latestOutbound
+        ? `${activeServices.map((service) => service.assistantName).join(', ')} 직원이 주문을 이어받아 조리 중입니다.`
+        : `${activeServices.map((service) => service.assistantName).join(', ')} 직원이 손님 주문을 받고 있습니다.`,
+      latestInboundAt: latestInbound?.timestamp || null,
+      latestOutboundAt: latestOutbound?.timestamp || null,
+      activeServiceIds,
+      openWorkItemCount,
+    };
+  }
+
+  if (
+    latestInbound &&
+    (!latestOutbound ||
+      new Date(latestInbound.timestamp).getTime() >
+        new Date(latestOutbound.timestamp).getTime())
+  ) {
+    return {
+      customerFlow: 'customer-arrived',
+      customerSummary:
+        '손님이 주문을 남겼고 아직 직원이 응답을 건네지 않았습니다.',
+      latestInboundAt: latestInbound.timestamp,
+      latestOutboundAt: latestOutbound?.timestamp || null,
+      activeServiceIds,
+      openWorkItemCount,
+    };
+  }
+
+  if (latestOutbound) {
+    return {
+      customerFlow: 'served',
+      customerSummary:
+        '주문 응답이 이미 전달됐습니다. 손님은 음식 받고 나간 상태로 봅니다.',
+      latestInboundAt: latestInbound?.timestamp || null,
+      latestOutboundAt: latestOutbound.timestamp,
+      activeServiceIds,
+      openWorkItemCount,
+    };
+  }
+
+  return {
+    customerFlow: 'idle',
+    customerSummary:
+      '아직 손님이 없거나 새 주문이 들어오지 않았습니다. 창구 대기 상태입니다.',
+    latestInboundAt: null,
+    latestOutboundAt: null,
+    activeServiceIds,
+    openWorkItemCount,
+  };
 }
 
 function countAssignmentsByServiceId(
@@ -1256,8 +1436,9 @@ function buildAdminTeams(args: {
     const activeServiceIds = linkedJid
       ? activeServiceIdsByJid.get(linkedJid) || []
       : [];
+    const assignedServiceIds = [...new Set(assignmentServiceIds)];
     const memberServiceIds = [
-      ...new Set([...assignmentServiceIds, ...activeServiceIds]),
+      ...new Set([...assignedServiceIds, ...activeServiceIds]),
     ];
 
     return {
@@ -1294,21 +1475,23 @@ function buildAdminTeams(args: {
       folderMixed: assignmentFolders.length > 1,
       source,
       color: color || pickTeamColor(teamId || name),
+      assignedServiceIds,
       memberServiceIds,
       activeServiceIds,
     };
   };
 
   for (const team of manualTeams) {
-    if (team.linked_jid) {
-      linkedJids.add(team.linked_jid);
+    const normalizedLinkedJid = normalizeLinkedJid(team.linked_jid);
+    if (normalizedLinkedJid) {
+      linkedJids.add(normalizedLinkedJid);
     }
     teams.set(
       team.team_id,
       buildTeam(
         team.team_id,
         team.name,
-        team.linked_jid,
+        normalizedLinkedJid,
         'manual',
         team.color,
         team.folder,
@@ -1354,9 +1537,141 @@ function buildAdminTeams(args: {
   return [...teams.values()];
 }
 
+function buildAdminCounters(args: {
+  channels: AdminChannelState[];
+  teams: AdminTeamState[];
+}): AdminCounterState[] {
+  const teamByJid = new Map<string, AdminTeamState>();
+  for (const team of args.teams) {
+    if (!team.linkedJid || teamByJid.has(team.linkedJid)) continue;
+    teamByJid.set(team.linkedJid, team);
+  }
+
+  const counters = new Map<string, AdminCounterState>();
+
+  const buildCounter = (
+    channel: Pick<
+      AdminChannelState,
+      | 'jid'
+      | 'name'
+      | 'customerFlow'
+      | 'customerSummary'
+      | 'latestInboundAt'
+      | 'latestOutboundAt'
+      | 'activeServiceIds'
+      | 'openWorkItemCount'
+      | 'assignments'
+    >,
+  ): AdminCounterState => {
+      const configuredTeam = teamByJid.get(channel.jid);
+      const assignedServiceIds = [
+        ...new Set(
+          channel.assignments
+            .filter((assignment) => assignment.kind === 'group')
+            .map((assignment) => assignment.serviceId),
+        ),
+      ];
+      const memberServiceIds =
+        configuredTeam?.memberServiceIds ||
+        [
+          ...new Set([
+            ...assignedServiceIds,
+            ...channel.activeServiceIds,
+          ]),
+        ];
+      const assignmentRequiresMention = [
+        ...new Set(
+          channel.assignments
+            .filter((assignment) => assignment.kind === 'group')
+            .map((assignment) => assignment.requiresTrigger !== false),
+        ),
+      ];
+
+      return {
+        counterId: configuredTeam?.teamId || channel.jid,
+        jid: channel.jid,
+        name: channel.name,
+        stationName: configuredTeam?.name || channel.name,
+        source: configuredTeam?.source || 'channel',
+        teamId: configuredTeam?.teamId || null,
+        folder: configuredTeam?.folder || null,
+        requiresMention:
+          configuredTeam?.requiresMention ??
+          (assignmentRequiresMention.length === 1
+            ? assignmentRequiresMention[0]
+            : true),
+        layoutLeft: configuredTeam?.layoutLeft ?? null,
+        layoutTop: configuredTeam?.layoutTop ?? null,
+        layoutWidth: configuredTeam?.layoutWidth ?? null,
+        layoutHeight: configuredTeam?.layoutHeight ?? null,
+        color: configuredTeam?.color || pickTeamColor(channel.jid),
+        customerFlow: channel.customerFlow,
+        customerSummary: channel.customerSummary,
+        latestInboundAt: channel.latestInboundAt,
+        latestOutboundAt: channel.latestOutboundAt,
+        activeServiceIds: [...channel.activeServiceIds],
+        assignedServiceIds:
+          configuredTeam?.assignedServiceIds || assignedServiceIds,
+        memberServiceIds,
+        openWorkItemCount: channel.openWorkItemCount,
+        assignmentCount: channel.assignments.length,
+        assignments: [...channel.assignments],
+      };
+    };
+
+  for (const channel of args.channels) {
+    counters.set(channel.jid, buildCounter(channel));
+  }
+
+  for (const team of args.teams) {
+    if (!team.linkedJid || counters.has(team.linkedJid)) continue;
+    counters.set(
+      team.linkedJid,
+      buildCounter({
+        jid: team.linkedJid,
+        name: team.linkedChannelName || team.name,
+        customerFlow: 'idle',
+        customerSummary:
+          '아직 손님이 없거나 새 주문이 들어오지 않았습니다. 창구 대기 상태입니다.',
+        latestInboundAt: null,
+        latestOutboundAt: null,
+        activeServiceIds: [...team.activeServiceIds],
+        openWorkItemCount: 0,
+        assignments: [],
+      }),
+    );
+  }
+
+  return [...counters.values()].sort((a, b) => {
+      const activityWeight = (counter: AdminCounterState): number =>
+        counter.customerFlow === 'handoff-ready'
+          ? 0
+          : counter.customerFlow === 'cooking'
+            ? 1
+            : counter.customerFlow === 'order-taking'
+              ? 2
+              : counter.customerFlow === 'customer-arrived'
+                ? 3
+                : counter.customerFlow === 'served'
+                  ? 4
+                  : 5;
+      const weightDiff = activityWeight(a) - activityWeight(b);
+      if (weightDiff !== 0) return weightDiff;
+      const timeA = a.latestInboundAt ?? a.latestOutboundAt;
+      const timeB = b.latestInboundAt ?? b.latestOutboundAt;
+      const timestampA = timeA ? new Date(timeA).getTime() : 0;
+      const timestampB = timeB ? new Date(timeB).getTime() : 0;
+      if (timestampA !== timestampB) return timestampB - timestampA;
+      return a.stationName.localeCompare(b.stationName);
+    });
+}
+
 export function readAdminState(projectRoot: string): AdminState {
   const companySettings = getOfficeCompanySettings();
-  const roomLayouts = parseRoomLayouts(companySettings?.room_layouts_json);
+  const roomLayouts = {
+    ...DEFAULT_STORE_ROOM_LAYOUTS,
+    ...parseRoomLayouts(companySettings?.room_layouts_json),
+  };
   const codexUsage = buildAdminCodexUsageState();
   const services = discoverConfiguredServices(projectRoot);
   const baseEnv = parseEnvFilePath(path.join(projectRoot, '.env'));
@@ -1406,6 +1721,18 @@ export function readAdminState(projectRoot: string): AdminState {
           : 'resting';
     const assignmentCount =
       assignmentCountByServiceId.get(service.serviceId) || 0;
+    const diagnostics = diagnoseServiceHealth({
+      serviceId: service.serviceId,
+      serviceName: service.serviceName,
+      assistantName: service.assistantName,
+      agentType: service.agentType,
+      role: service.role,
+      envPath: service.envOverlayPath || path.join(projectRoot, '.env'),
+      config,
+      runtime,
+      snapshotStale: !snapshot,
+      assignmentCount,
+    });
 
     return {
       serviceId: service.serviceId,
@@ -1428,10 +1755,25 @@ export function readAdminState(projectRoot: string): AdminState {
         stale: !snapshot,
       },
       assignmentCount,
+      diagnostics,
       config,
     };
   });
-  const teams = buildAdminTeams({ services: serviceStates, channels });
+  const enrichedChannels = channels.map((channel) => ({
+    ...channel,
+    ...deriveChannelCustomerFlow({
+      channel,
+      services: serviceStates,
+    }),
+  }));
+  const teams = buildAdminTeams({
+    services: serviceStates,
+    channels: enrichedChannels,
+  });
+  const counters = buildAdminCounters({
+    channels: enrichedChannels,
+    teams,
+  });
 
   return {
     generatedAt: new Date().toISOString(),
@@ -1447,7 +1789,8 @@ export function readAdminState(projectRoot: string): AdminState {
       codex: codexUsage,
     },
     services: serviceStates,
-    channels,
+    counters,
+    channels: enrichedChannels,
     teams,
     temperaments: listTemperaments(projectRoot),
   };
@@ -1543,7 +1886,10 @@ function normalizeLinkedJid(value?: string | null): string | null {
   if (discordChannelId) {
     return `dc:${discordChannelId}`;
   }
-  if (trimmed.startsWith('dc:') || trimmed.includes('@')) {
+  if (trimmed.startsWith('dc:')) {
+    return null;
+  }
+  if (/^[a-z]+:.+$/i.test(trimmed) || trimmed.includes('@')) {
     return trimmed;
   }
   return trimmed;
@@ -1738,7 +2084,7 @@ function findTeamChatContext(
 
   const candidateServiceIds = [
     input.serviceId?.trim() || '',
-    ...team.memberServiceIds,
+    ...team.assignedServiceIds,
   ].filter(Boolean);
 
   const targetGroup = candidateServiceIds
@@ -2101,9 +2447,9 @@ export function deleteOfficeTeamConfig(
       'Only manually created teams can be deleted',
     );
   }
-  if (adminTeam.memberServiceIds.length > 0) {
+  if (adminTeam.assignedServiceIds.length > 0) {
     throw new InvalidAdminInputError(
-      'Remove assigned or active staff from this team before deleting it',
+      'Remove assigned staff from this team before deleting it',
     );
   }
   deleteOfficeTeam(teamId);
@@ -2581,6 +2927,33 @@ export function upsertServiceConfig(
           input.clearCodexAuthJson,
         )
       : null;
+  const geminiApiKey =
+    agentType === 'gemini-cli'
+      ? normalizeSecretEnvValue(input.geminiApiKey, input.clearGeminiApiKey)
+      : null;
+  const geminiModel =
+    agentType === 'gemini-cli'
+      ? normalizeOptionalEnvValue(input.geminiModel)
+      : null;
+  const geminiCliPath =
+    agentType === 'gemini-cli'
+      ? normalizeOptionalEnvValue(input.geminiCliPath)
+      : null;
+  const localLlmBaseUrl =
+    agentType === 'local-llm'
+      ? normalizeOptionalEnvValue(input.localLlmBaseUrl)
+      : null;
+  const localLlmModel =
+    agentType === 'local-llm'
+      ? normalizeOptionalEnvValue(input.localLlmModel)
+      : null;
+  const localLlmApiKey =
+    agentType === 'local-llm'
+      ? normalizeSecretEnvValue(
+          input.localLlmApiKey,
+          input.clearLocalLlmApiKey,
+        )
+      : null;
 
   upsertEnvFile(targetPath, {
     ASSISTANT_NAME: assistantName,
@@ -2627,6 +3000,12 @@ export function upsertServiceConfig(
     CLAUDE_CODE_USE_CREDENTIAL_FILES: null,
     CODEX_AUTH_JSON_B64: codexAuthJson,
     CODEX_USE_HOME_AUTH: null,
+    GEMINI_API_KEY: geminiApiKey,
+    GEMINI_MODEL: geminiModel,
+    GEMINI_CLI_PATH: geminiCliPath,
+    LOCAL_LLM_BASE_URL: localLlmBaseUrl,
+    LOCAL_LLM_MODEL: localLlmModel,
+    LOCAL_LLM_API_KEY: localLlmApiKey,
     OPENAI_API_KEY: normalizeSecretEnvValue(
       input.openAiApiKey,
       input.clearOpenAiApiKey,
@@ -2800,19 +3179,17 @@ function createRegisteredGroupAssignment(
   );
   const chat = findChatInfo(jid);
   const linkedTeam = getOfficeTeams().find((team) => team.linked_jid === jid);
+  const displayName = chat?.name || template?.name || linkedTeam?.name || jid;
   const allFolders = getRegisteredGroupAssignments({ allServices: true }).map(
     (assignment) => assignment.folder,
   );
   const folder =
     linkedTeam?.folder?.trim() ||
     template?.folder ||
-    buildSuggestedGroupFolder(
-      chat?.name || template?.name || jid,
-      service.serviceId,
-      allFolders,
-    );
+    buildSuggestedGroupFolder(displayName, service.serviceId, allFolders);
+  const defaultRequiresTrigger = jid.startsWith('dc:') ? false : true;
   const group: RegisteredGroup = {
-    name: chat?.name || template?.name || jid,
+    name: displayName,
     folder,
     trigger: expectedAssignmentTrigger(service),
     added_at: new Date().toISOString(),
@@ -2820,7 +3197,7 @@ function createRegisteredGroupAssignment(
     requiresTrigger:
       linkedTeam?.requires_mention === null ||
       linkedTeam?.requires_mention === undefined
-        ? (template?.requiresTrigger ?? true)
+        ? (template?.requiresTrigger ?? defaultRequiresTrigger)
         : linkedTeam.requires_mention === 1,
     isMain: template?.isMain,
     serviceId: service.serviceId,
@@ -2864,12 +3241,12 @@ function syncRequestedServiceAssignments(
     return false;
   }
 
-  const linkedTeam = readAdminState(projectRoot).teams.find(
-    (team) => team.linkedJid === normalizedRequestedJid,
+  const counter = readAdminState(projectRoot).counters.find(
+    (entry) => entry.jid === normalizedRequestedJid,
   );
-  if (!linkedTeam) {
+  if (!counter) {
     throw new InvalidAdminInputError(
-      'Initial team assignment must target a known Discord team channel',
+      'Initial staff assignment must target a configured or discovered order counter',
     );
   }
 
@@ -2899,6 +3276,61 @@ export function toggleChannelAssignment(
       { jid: input.jid, serviceId: service.serviceId },
       'Removed channel assignment from service',
     );
+  }
+
+  return restartServiceAfterConfigChange(projectRoot, service.serviceId);
+}
+
+export function replaceServiceAssignments(
+  projectRoot: string,
+  input: { serviceId: string; jids?: string[] },
+): { scheduled: boolean } {
+  const service = findService(projectRoot, input.serviceId);
+  if (!roleUsesTeamAssignments(service.role)) {
+    throw new Error('이 역할은 직원 관리에서 따로 설정합니다.');
+  }
+
+  const desiredJids = [
+    ...new Set(
+      (input.jids || [])
+        .map((jid) => normalizeLinkedJid(jid))
+        .filter(Boolean) as string[],
+    ),
+  ];
+  const knownCounterJids = new Set(
+    readAdminState(projectRoot).counters.map((counter) => counter.jid),
+  );
+  for (const jid of desiredJids) {
+    if (!knownCounterJids.has(jid)) {
+      throw new InvalidAdminInputError(
+        `Unknown order counter: ${jid}`,
+      );
+    }
+  }
+
+  const existingAssignments = getRegisteredGroupAssignments({
+    serviceId: service.serviceId,
+  });
+  const existingJids = new Set(existingAssignments.map((assignment) => assignment.jid));
+  let changed = false;
+
+  for (const assignment of existingAssignments) {
+    if (desiredJids.includes(assignment.jid)) continue;
+    deleteRegisteredGroup(assignment.jid, service.serviceId);
+    changed = true;
+    logger.info(
+      { jid: assignment.jid, serviceId: service.serviceId },
+      'Removed channel assignment from service',
+    );
+  }
+
+  for (const jid of desiredJids) {
+    if (existingJids.has(jid)) continue;
+    changed = createRegisteredGroupAssignment(service, jid) || changed;
+  }
+
+  if (!changed) {
+    return { scheduled: false };
   }
 
   return restartServiceAfterConfigChange(projectRoot, service.serviceId);

@@ -249,5 +249,7 @@ export function getLegacyServiceIdByAgentType(
   return {
     'claude-code': mapping['claude-code'] || 'normal',
     codex: mapping.codex || 'codex',
+    'gemini-cli': mapping['gemini-cli'] || 'gemini',
+    'local-llm': mapping['local-llm'] || 'local-llm',
   };
 }

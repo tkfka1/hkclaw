@@ -33,6 +33,7 @@ import {
   readAdminChatHistory,
   readAdminState,
   readServiceLogs,
+  replaceServiceAssignments,
   runAdminChat,
   runServiceAction,
   toggleChannelAssignment,
@@ -64,6 +65,11 @@ const assignmentToggleSchema = z.object({
   jid: z.string().min(1),
   serviceId: z.string().min(1),
   enabled: z.boolean(),
+});
+
+const serviceAssignmentsSchema = z.object({
+  serviceId: z.string().min(1),
+  jids: z.array(z.string()).optional(),
 });
 
 const serviceConfigSchema = z.object({
@@ -101,6 +107,14 @@ const serviceConfigSchema = z.object({
   clearClaudeCodeOauthTokens: z.boolean().optional(),
   codexAuthJson: z.string().optional(),
   clearCodexAuthJson: z.boolean().optional(),
+  geminiApiKey: z.string().optional(),
+  clearGeminiApiKey: z.boolean().optional(),
+  geminiModel: z.string().optional(),
+  geminiCliPath: z.string().optional(),
+  localLlmBaseUrl: z.string().optional(),
+  localLlmModel: z.string().optional(),
+  localLlmApiKey: z.string().optional(),
+  clearLocalLlmApiKey: z.boolean().optional(),
   openAiApiKey: z.string().optional(),
   clearOpenAiApiKey: z.boolean().optional(),
   groqApiKey: z.string().optional(),
@@ -313,6 +327,10 @@ function hasConfiguredAdminAccess(): boolean {
   return countAdminUsers() > 0;
 }
 
+export function isBootstrapOpenAdminMode(): boolean {
+  return !hasConfiguredAdminAccess();
+}
+
 export function isPublicAdminRoute(method: string, pathname: string): boolean {
   return (
     (method === 'GET' &&
@@ -334,7 +352,7 @@ export function getAdminSessionTokenFromCookie(
 }
 
 export function isAuthorizedAdminRequest(header: string | undefined): boolean {
-  if (!hasConfiguredAdminAccess()) {
+  if (isBootstrapOpenAdminMode()) {
     return false;
   }
 
@@ -1649,6 +1667,8 @@ export function renderAdminPage(): string {
       function getServiceTheme(service) {
         if (service.role === 'dashboard') return 'dashboard';
         if (service.agentType === 'codex') return 'codex';
+        if (service.agentType === 'gemini-cli') return 'codex';
+        if (service.agentType === 'local-llm') return 'codex';
         return 'claude';
       }
 
@@ -1817,6 +1837,8 @@ export function renderAdminPage(): string {
                 <select data-field="agentType">
                   <option value="claude-code" \${service.config.agentType === 'claude-code' ? 'selected' : ''}>claude-code</option>
                   <option value="codex" \${service.config.agentType === 'codex' ? 'selected' : ''}>codex</option>
+                  <option value="gemini-cli" \${service.config.agentType === 'gemini-cli' ? 'selected' : ''}>gemini-cli</option>
+                  <option value="local-llm" \${service.config.agentType === 'local-llm' ? 'selected' : ''}>local-llm</option>
                 </select>
               </div>
               <div class="field">
@@ -1901,6 +1923,8 @@ export function renderAdminPage(): string {
                 <select data-field="agentType">
                   <option value="claude-code">claude-code</option>
                   <option value="codex">codex</option>
+                  <option value="gemini-cli">gemini-cli</option>
+                  <option value="local-llm">local-llm</option>
                 </select>
               </div>
               <div class="field">
@@ -2454,7 +2478,8 @@ export async function startAdminWebServer(
 
       if (req.method === 'GET' && url.pathname === '/login') {
         if (!authConfigured) {
-          sendHtmlPage(res, 503, renderSetupRequiredPage());
+          res.writeHead(302, { location: '/' });
+          res.end();
           return;
         }
         if (isAuthorized) {
@@ -2468,9 +2493,9 @@ export async function startAdminWebServer(
 
       if (req.method === 'POST' && url.pathname === '/api/admin/login') {
         if (!authConfigured) {
-          sendJson(res, 503, {
+          sendJson(res, 409, {
             error:
-              'Admin login is not configured. Set HKCLAW_ADMIN_PASSWORD and restart the service.',
+              'Bootstrap admin mode is active. Open the admin page directly instead of logging in.',
           });
           return;
         }
@@ -2506,18 +2531,14 @@ export async function startAdminWebServer(
       }
 
       if (!authConfigured) {
-        if (req.method === 'GET' && url.pathname === '/') {
-          sendHtmlPage(res, 503, renderSetupRequiredPage());
-          return;
-        }
-        sendJson(res, 503, {
-          error:
-            'Admin login is not configured. Set HKCLAW_ADMIN_PASSWORD and restart the service.',
-        });
-        return;
+        logger.info(
+          { pathname: url.pathname, method: req.method },
+          'Serving admin request in bootstrap open mode',
+        );
       }
 
       if (
+        authConfigured &&
         !isAuthorized &&
         !isPublicAdminRoute(req.method || 'GET', url.pathname)
       ) {
@@ -2670,6 +2691,19 @@ export async function startAdminWebServer(
       ) {
         const payload = assignmentToggleSchema.parse(await readJsonBody(req));
         const result = toggleChannelAssignment(opts.projectRoot, payload);
+        sendJson(res, result.scheduled ? 202 : 200, {
+          ok: true,
+          ...result,
+        });
+        return;
+      }
+
+      if (
+        req.method === 'POST' &&
+        url.pathname === '/api/admin/services/assignments'
+      ) {
+        const payload = serviceAssignmentsSchema.parse(await readJsonBody(req));
+        const result = replaceServiceAssignments(opts.projectRoot, payload);
         sendJson(res, result.scheduled ? 202 : 200, {
           ok: true,
           ...result,

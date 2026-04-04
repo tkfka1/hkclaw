@@ -9,6 +9,7 @@ import {
 import type { AgentOutput } from './agent-runner.js';
 import { detectCodexRotationTrigger } from './codex-token-rotation.js';
 import { detectFallbackTrigger } from './provider-fallback.js';
+import type { AgentType } from './types.js';
 
 export interface StreamedTriggerReason {
   reason: AgentTriggerReason;
@@ -22,7 +23,7 @@ export interface StreamedOutputState {
 }
 
 export interface EvaluateStreamedOutputOptions {
-  agentType: 'claude-code' | 'codex';
+  agentType: AgentType;
   provider: string;
   suppressClaudeAuthErrorOutput?: boolean;
   trackSuccessNullResult?: boolean;

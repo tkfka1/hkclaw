@@ -30,7 +30,7 @@ import {
   isSessionCommandAllowed,
   isSessionCommandControlMessage,
 } from './session-commands.js';
-import { Channel, NewMessage, RegisteredGroup } from './types.js';
+import { AgentType, Channel, NewMessage, RegisteredGroup } from './types.js';
 import { logger } from './logger.js';
 import { resolveGroupIpcPath } from './group-folder.js';
 
@@ -177,7 +177,7 @@ export function createMessageRuntime(deps: MessageRuntimeDeps): {
 
     const openWorkItem = getOpenWorkItem(
       chatJid,
-      (group.agentType || 'claude-code') as 'claude-code' | 'codex',
+      (group.agentType || 'claude-code') as AgentType,
     );
     if (openWorkItem) {
       const delivered = await deliverOpenWorkItem(channel, openWorkItem);
@@ -609,7 +609,7 @@ export function createMessageRuntime(deps: MessageRuntimeDeps): {
     for (const [chatJid, group] of Object.entries(registeredGroups)) {
       const openWorkItem = getOpenWorkItem(
         chatJid,
-        (group.agentType || 'claude-code') as 'claude-code' | 'codex',
+        (group.agentType || 'claude-code') as AgentType,
       );
       if (openWorkItem) {
         logger.info(

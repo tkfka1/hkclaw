@@ -7,6 +7,13 @@ import path from 'path';
 import { pathToFileURL } from 'url';
 
 import { discoverConfiguredServices } from './service-discovery.js';
+import {
+  buildEffectiveServiceEnv,
+  diagnoseServiceHealth,
+  formatServiceDiagnosticsInline,
+  summarizeServiceHealthConfig,
+  type ServiceDiagnostic,
+} from './service-health.js';
 
 type CliCommand = 'start' | 'stop' | 'restart' | 'status' | 'setup' | 'verify';
 type ServiceManager = 'launchd' | 'systemd' | 'none';
@@ -208,6 +215,20 @@ function getServiceStatusLine(
   return `${target.serviceName}: not found`;
 }
 
+export function formatCliServiceStatus(
+  statusLine: string,
+  diagnostics: ServiceDiagnostic[],
+): string[] {
+  if (diagnostics.length === 0) {
+    return [statusLine];
+  }
+  return [
+    statusLine,
+    `  diagnostics: ${formatServiceDiagnosticsInline(diagnostics)}`,
+    ...diagnostics.map((diagnostic) => `  - ${diagnostic.message}`),
+  ];
+}
+
 function stopAllServices(projectRoot: string): void {
   const manager = getServiceManager();
   const targets = getServiceTargets(projectRoot);
@@ -225,9 +246,46 @@ function stopAllServices(projectRoot: string): void {
 function printStatus(projectRoot: string): void {
   const manager = getServiceManager();
   const targets = getServiceTargets(projectRoot);
+  const servicesByName = new Map(
+    discoverConfiguredServices(projectRoot).map((service) => [
+      service.serviceName,
+      service,
+    ]),
+  );
   console.log(`service-manager: ${manager}`);
   for (const target of targets) {
-    console.log(getServiceStatusLine(target, manager));
+    const statusLine = getServiceStatusLine(target, manager);
+    const service = servicesByName.get(target.serviceName);
+    const diagnostics = service
+      ? diagnoseServiceHealth({
+          serviceId: service.serviceId,
+          serviceName: service.serviceName,
+          assistantName: service.assistantName,
+          agentType: service.agentType,
+          role: service.role,
+          envPath: service.envOverlayPath || path.join(projectRoot, '.env'),
+          config: summarizeServiceHealthConfig(
+            buildEffectiveServiceEnv(projectRoot, service),
+          ),
+          runtime: {
+            manager:
+              manager === 'none'
+                ? 'none'
+                : manager === 'launchd'
+                  ? 'launchd'
+                  : isRoot()
+                    ? 'systemd-system'
+                    : 'systemd-user',
+            activeState: statusLine.split(': ')[1] || 'unknown',
+            subState: 'status',
+            running: /running|active/.test(statusLine),
+            mainPid: null,
+          },
+        })
+      : [];
+    for (const line of formatCliServiceStatus(statusLine, diagnostics)) {
+      console.log(line);
+    }
   }
 }
 

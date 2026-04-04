@@ -154,14 +154,14 @@ HKCLAW_ADMIN_HOST=0.0.0.0
 HKCLAW_ADMIN_PORT=4622
 ```
 
-If you want the admin web to require a browser login, add bootstrap credentials:
+If you want browser login protection immediately, add bootstrap credentials:
 
 ```bash
 HKCLAW_ADMIN_USERNAME=admin
 HKCLAW_ADMIN_PASSWORD=change-this-before-exposing-the-port
 ```
 
-HKClaw uses these values to create or update the first admin account in SQLite, then signs in through the web login form with a session cookie. If `HKCLAW_ADMIN_PASSWORD` is unset, no admin account is bootstrapped.
+HKClaw uses these values to create or update the first admin account in SQLite, then signs in through the web login form with a session cookie. If `HKCLAW_ADMIN_PASSWORD` is unset, HKClaw starts in bootstrap open mode and serves the admin web directly until at least one admin account exists.
 
 The admin UI uses local system font stacks for first render, so bootstrap login and dashboard pages do not need public font CDNs or general internet access to paint correctly.
 

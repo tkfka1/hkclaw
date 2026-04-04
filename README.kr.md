@@ -157,14 +157,14 @@ HKCLAW_ADMIN_HOST=0.0.0.0
 HKCLAW_ADMIN_PORT=4622
 ```
 
-브라우저 로그인용 관리자 계정을 부팅 시 자동 생성하려면 아래도 함께 넣으면 된다.
+브라우저 로그인 보호를 바로 켜고 싶으면 아래도 함께 넣으면 된다.
 
 ```bash
 HKCLAW_ADMIN_USERNAME=admin
 HKCLAW_ADMIN_PASSWORD=외부에열기전에반드시바꿀값
 ```
 
-이 값들은 SQLite DB의 첫 관리자 계정을 생성하거나 갱신하는 bootstrap 용도다. 실제 접속은 웹 로그인 폼과 세션 쿠키로 처리된다. `HKCLAW_ADMIN_PASSWORD`가 비어 있으면 관리자 계정이 자동 생성되지 않는다.
+이 값들은 SQLite DB의 첫 관리자 계정을 생성하거나 갱신하는 bootstrap 용도다. 실제 접속은 웹 로그인 폼과 세션 쿠키로 처리된다. `HKCLAW_ADMIN_PASSWORD`가 비어 있으면 HKClaw는 bootstrap open mode로 admin 웹을 바로 열고, 관리자 계정이 하나라도 생기면 그때부터 로그인 보호로 전환된다.
 
 admin UI는 첫 렌더를 로컬 시스템 폰트 스택으로 처리하므로, bootstrap 로그인 화면과 대시보드가 public font CDN이나 일반 인터넷 연결에 의존하지 않는다.
 

@@ -334,6 +334,87 @@ args = [${JSON.stringify(mementoSseUrl)}, "--header", ${JSON.stringify(`Authoriz
   args.env.CODEX_HOME = sessionCodexDir;
 }
 
+function prepareGeminiCliEnvironment(args: {
+  env: Record<string, string>;
+  envVars: Record<string, string>;
+  projectRoot: string;
+  isPairedRoom: boolean;
+  memoryBriefing?: string;
+}): void {
+  if (args.envVars.GEMINI_API_KEY) {
+    args.env.GEMINI_API_KEY = args.envVars.GEMINI_API_KEY;
+  }
+  if (args.envVars.GEMINI_MODEL) {
+    args.env.GEMINI_MODEL = args.envVars.GEMINI_MODEL;
+  }
+  if (args.envVars.GEMINI_CLI_PATH) {
+    args.env.GEMINI_CLI_PATH = args.envVars.GEMINI_CLI_PATH;
+  }
+
+  const geminiDir = path.join(os.homedir(), '.gemini');
+  if (fs.existsSync(geminiDir)) {
+    args.env.GEMINI_CONFIG_DIR = geminiDir;
+  }
+
+  const prompts = [
+    readPlatformPrompt('gemini-cli', args.projectRoot),
+    args.isPairedRoom
+      ? readPairedRoomPrompt('gemini-cli', args.projectRoot)
+      : undefined,
+    args.memoryBriefing,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join('\n\n---\n\n')
+    .trim();
+  if (prompts) {
+    args.env.HKCLAW_SYSTEM_PROMPT = prompts;
+  }
+
+  delete args.env.ANTHROPIC_API_KEY;
+  delete args.env.ANTHROPIC_AUTH_TOKEN;
+  delete args.env.ANTHROPIC_BASE_URL;
+  delete args.env.CLAUDE_CODE_OAUTH_TOKEN;
+}
+
+function prepareLocalLlmEnvironment(args: {
+  env: Record<string, string>;
+  envVars: Record<string, string>;
+  projectRoot: string;
+  group: RegisteredGroup;
+  isPairedRoom: boolean;
+  memoryBriefing?: string;
+}): void {
+  const localLlmModel =
+    args.group.agentConfig?.localLlmModel || args.envVars.LOCAL_LLM_MODEL;
+  if (localLlmModel) args.env.LOCAL_LLM_MODEL = localLlmModel;
+  if (args.envVars.LOCAL_LLM_BASE_URL) {
+    args.env.LOCAL_LLM_BASE_URL = args.envVars.LOCAL_LLM_BASE_URL;
+  }
+  if (args.envVars.LOCAL_LLM_API_KEY) {
+    args.env.LOCAL_LLM_API_KEY = args.envVars.LOCAL_LLM_API_KEY;
+  }
+
+  const prompts = [
+    readPlatformPrompt('local-llm', args.projectRoot),
+    args.isPairedRoom
+      ? readPairedRoomPrompt('local-llm', args.projectRoot)
+      : undefined,
+    args.memoryBriefing,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join('\n\n---\n\n')
+    .trim();
+  if (prompts) {
+    args.env.HKCLAW_SYSTEM_PROMPT = prompts;
+  }
+
+  delete args.env.ANTHROPIC_API_KEY;
+  delete args.env.ANTHROPIC_AUTH_TOKEN;
+  delete args.env.ANTHROPIC_BASE_URL;
+  delete args.env.CLAUDE_CODE_OAUTH_TOKEN;
+  delete args.env.OPENAI_API_KEY;
+}
+
 function stripManagedTomlTables(
   toml: string,
   managedPrefixes: string[],
@@ -443,7 +524,12 @@ export function prepareGroupEnvironment(
   }
 
   const agentType = group.agentType || 'claude-code';
-  const runnerDirName = agentType === 'codex' ? 'codex-runner' : 'agent-runner';
+  const runnerDirName =
+    agentType === 'codex'
+      ? 'codex-runner'
+      : agentType === 'claude-code'
+        ? 'agent-runner'
+        : 'generic-runner';
   const runnerDir = path.join(projectRoot, 'runners', runnerDirName);
 
   const envVars = readServiceEnvFile([
@@ -461,6 +547,12 @@ export function prepareGroupEnvironment(
     'CODEX_USE_HOME_AUTH',
     'CODEX_MODEL',
     'CODEX_EFFORT',
+    'GEMINI_API_KEY',
+    'GEMINI_MODEL',
+    'GEMINI_CLI_PATH',
+    'LOCAL_LLM_BASE_URL',
+    'LOCAL_LLM_MODEL',
+    'LOCAL_LLM_API_KEY',
     'OPENAI_API_KEY',
     'GROQ_API_KEY',
     'FALLBACK_ENABLED',
@@ -499,6 +591,23 @@ export function prepareGroupEnvironment(
       sessionRootDir,
       chatJid,
       isMain,
+      isPairedRoom,
+      memoryBriefing: options?.memoryBriefing,
+    });
+  } else if (agentType === 'gemini-cli') {
+    prepareGeminiCliEnvironment({
+      env,
+      envVars,
+      projectRoot,
+      isPairedRoom,
+      memoryBriefing: options?.memoryBriefing,
+    });
+  } else if (agentType === 'local-llm') {
+    prepareLocalLlmEnvironment({
+      env,
+      envVars,
+      projectRoot,
+      group,
       isPairedRoom,
       memoryBriefing: options?.memoryBriefing,
     });

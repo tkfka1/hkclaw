@@ -4,7 +4,10 @@ import path from 'path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { discoverConfiguredServices } from './service-discovery.js';
+import {
+  discoverConfiguredServices,
+  getLegacyServiceIdByAgentType,
+} from './service-discovery.js';
 import { parseAgentType, parseServiceRole } from './service-metadata.js';
 
 const tempDirs: string[] = [];
@@ -85,6 +88,13 @@ describe('service metadata helpers', () => {
     expect(parseAgentType('claude')).toBe('claude-code');
   });
 
+  it('accepts gemini and local llm aliases', () => {
+    expect(parseAgentType('gemini')).toBe('gemini-cli');
+    expect(parseAgentType('gemini-cli')).toBe('gemini-cli');
+    expect(parseAgentType('ollama')).toBe('local-llm');
+    expect(parseAgentType('vllm')).toBe('local-llm');
+  });
+
   it('normalizes usage aliases into service roles', () => {
     expect(parseServiceRole('text-chat')).toBe('normal');
     expect(parseServiceRole('voice-chat')).toBe('normal');
@@ -121,5 +131,27 @@ describe('service metadata helpers', () => {
 
     expect(primary?.serviceId).toBe('frontdesk');
     expect(primary?.assistantName).toBe('frontdesk');
+  });
+
+  it('returns legacy service ids for all supported agent types', () => {
+    const projectRoot = createProject({
+      '.env': 'SERVICE_ID=frontdesk\nSERVICE_ROLE=normal\n',
+      '.env.codex': 'SERVICE_ID=codex-main\n',
+      '.env.agent.gemini': [
+        'SERVICE_ID=gemini-main',
+        'SERVICE_AGENT_TYPE=gemini-cli',
+      ].join('\n'),
+      '.env.agent.local': [
+        'SERVICE_ID=local-main',
+        'SERVICE_AGENT_TYPE=local-llm',
+      ].join('\n'),
+    });
+
+    expect(getLegacyServiceIdByAgentType(projectRoot)).toEqual({
+      'claude-code': 'frontdesk',
+      codex: 'codex-main',
+      'gemini-cli': 'gemini-main',
+      'local-llm': 'local-main',
+    });
   });
 });

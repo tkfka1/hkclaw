@@ -6,11 +6,15 @@ import type { AgentType } from './types.js';
 const PLATFORM_PROMPT_FILES: Record<AgentType, string> = {
   'claude-code': 'claude-platform.md',
   codex: 'codex-platform.md',
+  'gemini-cli': 'gemini-platform.md',
+  'local-llm': 'local-llm-platform.md',
 };
 
 const PAIRED_ROOM_PROMPT_FILES: Record<AgentType, string> = {
   'claude-code': 'claude-paired-room.md',
   codex: 'codex-paired-room.md',
+  'gemini-cli': 'gemini-paired-room.md',
+  'local-llm': 'local-llm-paired-room.md',
 };
 
 export function getPlatformPromptsDir(projectRoot = process.cwd()): string {

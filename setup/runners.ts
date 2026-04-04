@@ -1,5 +1,5 @@
 /**
- * Step: runners — Build the Claude and Codex runner packages.
+ * Step: runners — Build the Claude, Codex, and generic runner packages.
  */
 import { execSync } from 'child_process';
 import fs from 'fs';
@@ -40,15 +40,27 @@ export async function run(_args: string[]): Promise<void> {
     'dist',
     'index.js',
   );
+  const genericRunner = path.join(
+    projectRoot,
+    'runners',
+    'generic-runner',
+    'dist',
+    'index.js',
+  );
   const agentRunnerOk = fs.existsSync(agentRunner);
   const codexRunnerOk = fs.existsSync(codexRunner);
+  const genericRunnerOk = fs.existsSync(genericRunner);
 
-  const status = buildOk && agentRunnerOk ? 'success' : 'failed';
+  const status =
+    buildOk && agentRunnerOk && codexRunnerOk && genericRunnerOk
+      ? 'success'
+      : 'failed';
 
   emitStatus('SETUP_RUNNERS', {
     BUILD_OK: buildOk,
     AGENT_RUNNER: agentRunnerOk,
     CODEX_RUNNER: codexRunnerOk,
+    GENERIC_RUNNER: genericRunnerOk,
     STATUS: status,
     LOG: 'logs/setup.log',
   });

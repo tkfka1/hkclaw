@@ -7,9 +7,15 @@ export interface AgentConfig {
   claudeEffort?: string;
   claudeThinking?: 'adaptive' | 'enabled' | 'disabled';
   claudeThinkingBudget?: number;
+  geminiModel?: string;
+  localLlmModel?: string;
 }
 
-export type AgentType = 'claude-code' | 'codex';
+export type AgentType =
+  | 'claude-code'
+  | 'codex'
+  | 'gemini-cli'
+  | 'local-llm';
 export type ServiceRole = 'dashboard' | 'normal';
 
 /** Phase of agent output as emitted by the runner. */

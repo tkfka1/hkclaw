@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseCliCommand } from './hkclaw-cli.js';
+import { formatCliServiceStatus, parseCliCommand } from './hkclaw-cli.js';
 
 describe('hkclaw cli', () => {
   it('parses supported commands', () => {
@@ -15,5 +15,21 @@ describe('hkclaw cli', () => {
   it('rejects unknown commands', () => {
     expect(parseCliCommand([])).toBeNull();
     expect(parseCliCommand(['boot'])).toBeNull();
+  });
+
+  it('includes diagnostics in formatted status output', () => {
+    expect(
+      formatCliServiceStatus('hkclaw-qa: stopped', [
+        {
+          level: 'error',
+          code: 'discord-token-missing',
+          message: 'Normal service cannot connect without DISCORD_BOT_TOKEN.',
+        },
+      ]),
+    ).toEqual([
+      'hkclaw-qa: stopped',
+      '  diagnostics: error:discord-token-missing',
+      '  - Normal service cannot connect without DISCORD_BOT_TOKEN.',
+    ]);
   });
 });

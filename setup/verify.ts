@@ -13,6 +13,12 @@ import { STORE_DIR } from '../src/config.js';
 import { parseEnvFilePath, readEnvFile } from '../src/env.js';
 import { logger } from '../src/logger.js';
 import { discoverConfiguredServices } from '../src/service-discovery.js';
+import {
+  buildEffectiveServiceEnv,
+  diagnoseServiceHealth,
+  summarizeServiceHealthConfig,
+  type ServiceDiagnostic,
+} from '../src/service-health.js';
 import { getPlatform, getServiceManager, isRoot } from './platform.js';
 import { emitStatus } from './status.js';
 
@@ -25,6 +31,35 @@ type ServiceStatus = 'running' | 'stopped' | 'not_found' | 'not_configured';
 interface ServiceCheck {
   name: string;
   status: ServiceStatus;
+}
+
+export function statusToRuntime(
+  status: ServiceStatus,
+): {
+  manager: 'systemd-user' | 'systemd-system' | 'launchd' | 'none';
+  activeState: string;
+  subState: string;
+  running: boolean;
+  mainPid: number | null;
+} {
+  return {
+    manager: 'none',
+    activeState:
+      status === 'running'
+        ? 'active'
+        : status === 'stopped'
+          ? 'inactive'
+          : 'unknown',
+    subState: status === 'running' ? 'running' : status,
+    running: status === 'running',
+    mainPid: null,
+  };
+}
+
+export function hasBlockingDiagnostics(
+  diagnostics: ServiceDiagnostic[],
+): boolean {
+  return diagnostics.some((diagnostic) => diagnostic.level === 'error');
 }
 
 export function getPrimaryServiceStatus(
@@ -112,6 +147,7 @@ export async function run(_args: string[]): Promise<void> {
   const projectRoot = process.cwd();
   const mgr = getServiceManager();
   const serviceDefs = discoverConfiguredServices(projectRoot);
+  const baseEnv = parseEnvFilePath(path.join(projectRoot, '.env'));
 
   logger.info('Starting verification');
 
@@ -129,6 +165,27 @@ export async function run(_args: string[]): Promise<void> {
   for (const svc of services) {
     logger.info({ service: svc.name, status: svc.status }, 'Service status');
   }
+
+  const diagnosticsByService = Object.fromEntries(
+    serviceDefs.map((service) => {
+      const serviceStatus =
+        services.find((entry) => entry.name === service.serviceName)?.status ||
+        'not_found';
+      const diagnostics = diagnoseServiceHealth({
+        serviceId: service.serviceId,
+        serviceName: service.serviceName,
+        assistantName: service.assistantName,
+        agentType: service.agentType,
+        role: service.role,
+        envPath: service.envOverlayPath || path.join(projectRoot, '.env'),
+        config: summarizeServiceHealthConfig(
+          buildEffectiveServiceEnv(projectRoot, service, baseEnv),
+        ),
+        runtime: statusToRuntime(serviceStatus),
+      });
+      return [service.serviceName, diagnostics];
+    }),
+  );
 
   // 2. Check credentials
   let credentials = 'missing';
@@ -200,10 +257,14 @@ export async function run(_args: string[]): Promise<void> {
   const allConfiguredServicesRunning = services.every(
     (service) => service.status === 'running',
   );
+  const hasDiagnosticErrors = Object.values(diagnosticsByService).some(
+    (diagnostics) => hasBlockingDiagnostics(diagnostics),
+  );
 
   const status =
     primaryRunning &&
     allConfiguredServicesRunning &&
+    !hasDiagnosticErrors &&
     credentials !== 'missing' &&
     anyChannelConfigured &&
     registeredGroups > 0
@@ -216,10 +277,24 @@ export async function run(_args: string[]): Promise<void> {
     servicesSummary[svc.name] = svc.status;
   }
 
-  logger.info({ status, channelAuth, servicesSummary }, 'Verification complete');
+  const diagnosticsSummary = Object.fromEntries(
+    Object.entries(diagnosticsByService).map(([serviceName, diagnostics]) => [
+      serviceName,
+      diagnostics.map((diagnostic) => ({
+        level: diagnostic.level,
+        code: diagnostic.code,
+      })),
+    ]),
+  );
+
+  logger.info(
+    { status, channelAuth, servicesSummary, diagnosticsSummary },
+    'Verification complete',
+  );
 
   emitStatus('VERIFY', {
     SERVICES: JSON.stringify(servicesSummary),
+    DIAGNOSTICS: JSON.stringify(diagnosticsSummary),
     // Legacy field (keep for backward compatibility)
     SERVICE: getPrimaryServiceStatus(services),
     CREDENTIALS: credentials,

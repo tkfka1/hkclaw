@@ -34,7 +34,7 @@ export interface AgentInput {
   runtimeTaskId?: string;
   useTaskScopedSession?: boolean;
   assistantName?: string;
-  agentType?: 'claude-code' | 'codex';
+  agentType?: AgentType;
 }
 
 export interface AgentOutput {

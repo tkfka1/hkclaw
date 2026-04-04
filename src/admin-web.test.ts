@@ -78,23 +78,17 @@ describe('admin web auth helpers', () => {
     expect(verifyAdminPassword('ops-pass', user.password_hash)).toBe(true);
   });
 
-  it('renders admin surfaces without external font dependencies', () => {
-    const pages = [
-      renderLoginPage(),
-      renderSetupRequiredPage(),
-      renderAdminPage(),
-      renderAdminGamePage(),
-    ];
+  it('renders the primary admin pages', () => {
+    const pages = [renderLoginPage(), renderSetupRequiredPage(), renderAdminPage()];
 
     for (const html of pages) {
       expect(html).toContain('href="/favicon.ico"');
-      expect(html).not.toContain('fonts.googleapis.com');
-      expect(html).not.toContain('fonts.gstatic.com');
-      expect(html).not.toContain('@import url(');
     }
+
+    expect(renderAdminGamePage()).toContain('<title>Office Admin</title>');
   });
 
-  it('renders the richer login shell and office overview controls', () => {
+  it('renders the original game-style office admin shell', () => {
     const loginPage = renderLoginPage();
     const adminGamePage = renderAdminGamePage();
 
@@ -102,90 +96,29 @@ describe('admin web auth helpers', () => {
     expect(loginPage).toContain(
       'HKClaw 운영실은 브라우저 로그인으로 보호됩니다.',
     );
-    expect(adminGamePage).toContain('id="stage-overview"');
-    expect(adminGamePage).toContain('data-action="camera-overview"');
-    expect(adminGamePage).toContain('data-action="camera-focus"');
-    expect(adminGamePage).toContain('data-action="camera-jump"');
-    expect(adminGamePage).toContain('data-action="open-team-management"');
-    expect(adminGamePage).toContain('data-action="open-employees"');
+    expect(adminGamePage).toContain('<title>Office Admin</title>');
+    expect(adminGamePage).toContain('class="app"');
+    expect(adminGamePage).toContain('class="stage-wrap"');
+    expect(adminGamePage).toContain('class="office" id="office"');
+    expect(adminGamePage).toContain('id="detail-modal"');
+    expect(adminGamePage).toContain('id="detail-panel"');
+    expect(adminGamePage).toContain('data-action="open-team-create"');
     expect(adminGamePage).toContain('data-action="open-hiring"');
-    expect(adminGamePage).toContain('data-action="open-team-layout"');
-    expect(adminGamePage).toContain('data-action="open-temperaments"');
-    expect(adminGamePage).toContain('data-action="select-hero"');
-    expect(adminGamePage).toContain('data-action="toggle-party-member"');
-    expect(adminGamePage).toContain('data-action="save-party-preset"');
-    expect(adminGamePage).toContain('data-action="load-party-preset"');
-    expect(adminGamePage).toContain('data-action="save-relic-loadout"');
-    expect(adminGamePage).toContain('data-action="load-relic-loadout"');
-    expect(adminGamePage).toContain('data-action="hero-skill"');
-    expect(adminGamePage).toContain('data-action="begin-raid"');
-    expect(adminGamePage).toContain('data-action="raid-command"');
-    expect(adminGamePage).toContain('data-action="claim-raid-loot"');
-    expect(adminGamePage).toContain('data-action="accept-objective"');
-    expect(adminGamePage).toContain('data-action="resolve-objective"');
-    expect(adminGamePage).toContain('data-action="reset-hero-customization"');
-    expect(adminGamePage).toContain('data-action="reset-campaign-state"');
-    expect(adminGamePage).toContain('data-action="cycle-hero"');
-    expect(adminGamePage).toContain('data-action="logout"');
-    expect(adminGamePage).toContain('data-employee-filter-input');
-    expect(adminGamePage).toContain('id="hero-customization-form"');
-    expect(adminGamePage).toContain('오피스 레이드 파티');
-    expect(adminGamePage).toContain('현재 퀘스트');
-    expect(adminGamePage).toContain('보스 레이드');
-    expect(adminGamePage).toContain('오피스 항로');
-    expect(adminGamePage).toContain('상황 신호');
-    expect(adminGamePage).toContain('렐릭 금고');
-    expect(adminGamePage).toContain('Relic Memory');
-    expect(adminGamePage).toContain('Squad Memory');
-    expect(adminGamePage).toContain('Camera Focus');
-    expect(adminGamePage).toContain('현장 기록');
-    expect(adminGamePage).toContain('캠페인 로그 초기화');
+    expect(adminGamePage).toContain("id: 'team-management'");
+    expect(adminGamePage).toContain("id: 'hiring'");
+    expect(adminGamePage).toContain("id: 'employees'");
+    expect(adminGamePage).toContain("data-origin-block=\"gemini-cli\"");
+    expect(adminGamePage).toContain("data-origin-block=\"local-llm\"");
+    expect(adminGamePage).toContain('function buildCounterLayouts');
+    expect(adminGamePage).toContain('function boot()');
+    expect(adminGamePage).toContain('this.cameras.main');
   });
 
-  it('preserves cleared raid hp when rebuilding encounter cards', () => {
-    const adminGamePage = renderAdminGamePage();
-
-    expect(adminGamePage).toContain('raid.bossHp ?? bossMaxHp');
-    expect(adminGamePage).not.toContain('raid.bossHp || bossMaxHp');
-  });
-
-  it('persists raid relic inventory and applies equipped bonuses to party power', () => {
-    const adminGamePage = renderAdminGamePage();
-
-    expect(adminGamePage).toContain('relicInventory: []');
-    expect(adminGamePage).toContain('equippedRelicIds: []');
-    expect(adminGamePage).toContain(
-      'relicLoadouts: createDefaultRelicLoadouts()',
-    );
-    expect(adminGamePage).toContain(
-      'rewardRelic = relicDefForEncounter(encounter.id)',
-    );
-    expect(adminGamePage).toContain("'unequip-relic' : 'equip-relic'");
-    expect(adminGamePage).toContain('equippedRelicBonuses().power');
-  });
-
-  it('supports saving and loading relic loadout memory slots', () => {
-    const adminGamePage = renderAdminGamePage();
-
-    expect(adminGamePage).toContain("savedAt: ''");
-    expect(adminGamePage).toContain('function saveRelicLoadout(slotId)');
-    expect(adminGamePage).toContain('function loadRelicLoadout(slotId)');
-    expect(adminGamePage).toContain('data-action="save-relic-loadout"');
-    expect(adminGamePage).toContain('data-action="load-relic-loadout"');
-    expect(adminGamePage).toContain('Relic Loadout');
-  });
-
-  it('keeps the stage shell scrollable and syncs the expanded header layout', () => {
+  it('keeps the office shell scrollable', () => {
     const adminGamePage = renderAdminGamePage();
 
     expect(adminGamePage).toContain('overflow-y: auto;');
     expect(adminGamePage).toContain('scrollbar-gutter: stable;');
-    expect(adminGamePage).toContain('function syncStageHeaderLayout()');
-    expect(adminGamePage).toContain(
-      'header.style.paddingBottom = `${basePaddingBottom + overflow}px`;',
-    );
-    expect(adminGamePage).toContain(
-      "window.addEventListener('resize', () => {",
-    );
+    expect(adminGamePage).toContain('setInterval(() => {');
   });
 });

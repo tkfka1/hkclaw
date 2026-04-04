@@ -28,6 +28,8 @@ describe('parseDiscordChannelId', () => {
 
   it('rejects non-channel inputs', () => {
     expect(parseDiscordChannelId('dc:not-a-channel')).toBeNull();
+    expect(parseDiscordChannelId('dc:14867924710')).toBeNull();
+    expect(parseDiscordChannelId('14867924710')).toBeNull();
     expect(parseDiscordChannelId('general')).toBeNull();
   });
 });

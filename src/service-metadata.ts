@@ -25,6 +25,17 @@ export function parseAgentType(
 ): AgentType {
   const normalized = (value || '').trim().toLowerCase();
   if (normalized === 'codex') return 'codex';
+  if (normalized === 'gemini' || normalized === 'gemini-cli') {
+    return 'gemini-cli';
+  }
+  if (
+    normalized === 'local' ||
+    normalized === 'local-llm' ||
+    normalized === 'ollama' ||
+    normalized === 'vllm'
+  ) {
+    return 'local-llm';
+  }
   if (
     normalized === 'claude' ||
     normalized === 'claude-code' ||
@@ -62,7 +73,17 @@ export function parseServiceRole(
 }
 
 export function getAgentLabel(agentType: AgentType): string {
-  return agentType === 'codex' ? 'Codex' : 'Claude';
+  switch (agentType) {
+    case 'codex':
+      return 'Codex';
+    case 'gemini-cli':
+      return 'Gemini CLI';
+    case 'local-llm':
+      return 'Local LLM';
+    case 'claude-code':
+    default:
+      return 'Claude';
+  }
 }
 
 export function getRoleLabel(role: ServiceRole): string {

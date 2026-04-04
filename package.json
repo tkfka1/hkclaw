@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:runners": "npm --prefix runners/agent-runner install && npm --prefix runners/agent-runner run build && npm --prefix runners/codex-runner install && npm --prefix runners/codex-runner run build",
+    "build:runners": "npm --prefix runners/agent-runner install && npm --prefix runners/agent-runner run build && npm --prefix runners/codex-runner install && npm --prefix runners/codex-runner run build && npm --prefix runners/generic-runner install && npm --prefix runners/generic-runner run build",
     "cli": "node dist/hkclaw-cli.js",
     "service:start": "node dist/hkclaw-cli.js start",
     "service:stop": "node dist/hkclaw-cli.js stop",

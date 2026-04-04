@@ -18,6 +18,7 @@ import {
   deleteServiceConfig,
   readAdminChatHistory,
   readAdminState,
+  replaceServiceAssignments,
   upsertOfficeTeamConfig,
   upsertOfficeTeamLayoutConfig,
   upsertOfficeRoomLayoutConfig,
@@ -237,6 +238,60 @@ describe('upsertServiceConfig', () => {
     expect(service?.config.codexAuthJsonValue).toBe(authJson);
   });
 
+  it('stores gemini cli settings in env and admin state', () => {
+    const projectRoot = createProject();
+
+    const result = upsertServiceConfig(projectRoot, {
+      assistantName: 'Gemini Bot',
+      serviceId: 'gemini-bot',
+      agentType: 'gemini-cli',
+      geminiApiKey: 'gemini-secret',
+      geminiModel: 'gemini-2.5-pro',
+      geminiCliPath: '/usr/local/bin/gemini',
+    });
+
+    const envFile = fs.readFileSync(result.envPath, 'utf-8');
+    expect(envFile).toContain('GEMINI_API_KEY=gemini-secret');
+    expect(envFile).toContain('GEMINI_MODEL=gemini-2.5-pro');
+    expect(envFile).toContain('GEMINI_CLI_PATH=/usr/local/bin/gemini');
+
+    const state = readAdminState(projectRoot);
+    const service = state.services.find(
+      (entry) => entry.serviceId === 'gemini-bot',
+    );
+    expect(service?.config.geminiApiKeyConfigured).toBe(true);
+    expect(service?.config.geminiApiKeyValue).toBe('gemini-secret');
+    expect(service?.config.geminiModel).toBe('gemini-2.5-pro');
+    expect(service?.config.geminiCliPath).toBe('/usr/local/bin/gemini');
+  });
+
+  it('stores local llm settings in env and admin state', () => {
+    const projectRoot = createProject();
+
+    const result = upsertServiceConfig(projectRoot, {
+      assistantName: 'Local Bot',
+      serviceId: 'local-bot',
+      agentType: 'local-llm',
+      localLlmBaseUrl: 'http://127.0.0.1:11434/v1',
+      localLlmModel: 'qwen2.5-coder:14b',
+      localLlmApiKey: 'local-secret',
+    });
+
+    const envFile = fs.readFileSync(result.envPath, 'utf-8');
+    expect(envFile).toContain('LOCAL_LLM_BASE_URL=http://127.0.0.1:11434/v1');
+    expect(envFile).toContain('LOCAL_LLM_MODEL=qwen2.5-coder:14b');
+    expect(envFile).toContain('LOCAL_LLM_API_KEY=local-secret');
+
+    const state = readAdminState(projectRoot);
+    const service = state.services.find(
+      (entry) => entry.serviceId === 'local-bot',
+    );
+    expect(service?.config.localLlmBaseUrl).toBe('http://127.0.0.1:11434/v1');
+    expect(service?.config.localLlmModel).toBe('qwen2.5-coder:14b');
+    expect(service?.config.localLlmApiKeyConfigured).toBe(true);
+    expect(service?.config.localLlmApiKeyValue).toBe('local-secret');
+  });
+
   it('keeps only Claude auth for Claude services while preserving per-service fallback', () => {
     const projectRoot = createProject();
 
@@ -441,6 +496,125 @@ describe('upsertServiceConfig', () => {
     expect(team?.layoutHeight).toBe(17.5);
   });
 
+  it('builds counter state by merging channel flow with station config', () => {
+    const projectRoot = createProject();
+    const now = new Date().toISOString();
+    storeChatMetadata('dc:1486792500814413957', now, 'Drive Thru', 'discord', true);
+    upsertOfficeTeamConfig(projectRoot, {
+      name: 'Drive Thru Station',
+      linkedJid: 'dc:1486792500814413957',
+      folder: 'drive-thru-room',
+      requiresMention: false,
+      color: '#ffbf69',
+    });
+    setRegisteredGroup('dc:1486792500814413957', {
+      name: 'Drive Thru',
+      folder: 'drive-thru-room',
+      trigger: '@Fry',
+      added_at: now,
+      serviceId: 'fry-bot',
+      agentType: 'codex',
+      requiresTrigger: false,
+    });
+    storeMessage({
+      id: 'msg-1',
+      chat_jid: 'dc:1486792500814413957',
+      sender: 'customer-1',
+      sender_name: 'Customer',
+      content: 'burger set',
+      timestamp: now,
+    });
+
+    const state = readAdminState(projectRoot);
+    const team = state.teams.find(
+      (entry) => entry.linkedJid === 'dc:1486792500814413957',
+    );
+    const counter = state.counters.find(
+      (entry) => entry.jid === 'dc:1486792500814413957',
+    );
+
+    expect(counter).toMatchObject({
+      stationName: 'Drive Thru Station',
+      name: 'Drive Thru',
+      folder: 'drive-thru-room',
+      requiresMention: false,
+      color: '#ffbf69',
+      customerFlow: 'customer-arrived',
+      assignmentCount: 1,
+    });
+    expect(counter?.assignedServiceIds).toContain('fry-bot');
+    expect(counter?.memberServiceIds).toContain('fry-bot');
+    expect(team?.assignedServiceIds).toContain('fry-bot');
+  });
+
+  it('keeps manually added counters visible before any Discord traffic arrives', () => {
+    const projectRoot = createProject();
+
+    upsertOfficeTeamConfig(projectRoot, {
+      name: 'Front Counter',
+      linkedJid: 'dc:1486792500814413111',
+      color: '#58d4ba',
+    });
+
+    const state = readAdminState(projectRoot);
+    expect(
+      state.counters.find((entry) => entry.jid === 'dc:1486792500814413111'),
+    ).toMatchObject({
+      stationName: 'Front Counter',
+      customerFlow: 'idle',
+      color: '#58d4ba',
+    });
+  });
+
+  it('ignores malformed short discord jids in manual counter config', () => {
+    const projectRoot = createProject();
+    const now = new Date().toISOString();
+    storeChatMetadata(
+      'dc:1486792471072473202',
+      now,
+      'hankyo #any',
+      'discord',
+      true,
+    );
+    upsertOfficeTeam({
+      team_id: 'broken-any',
+      name: 'hankyo #any',
+      linked_jid: 'dc:14867924710',
+      folder: null,
+      requires_mention: false,
+      color: '#58d4ba',
+    });
+    setRegisteredGroup('dc:14867924710', {
+      name: 'hankyo #any',
+      folder: 'broken-any',
+      trigger: '@broken',
+      added_at: now,
+      serviceId: 'broken-bot',
+      agentType: 'codex',
+      requiresTrigger: false,
+    });
+
+    const state = readAdminState(projectRoot);
+
+    expect(
+      state.counters.filter((entry) => entry.name === 'hankyo #any'),
+    ).toHaveLength(1);
+    expect(
+      state.channels.find((entry) => entry.jid === 'dc:14867924710'),
+    ).toBeUndefined();
+    expect(state.teams.find((entry) => entry.teamId === 'broken-any'))
+      .toMatchObject({
+        linkedJid: null,
+      });
+  });
+
+  it('does not create default store zones in the layout', () => {
+    const projectRoot = createProject();
+
+    const state = readAdminState(projectRoot);
+    expect(state.company.roomLayouts).toEqual({});
+  });
+
   it('stores room layout size and custom room names', () => {
     const projectRoot = createProject();
 
@@ -493,6 +667,111 @@ describe('upsertServiceConfig', () => {
       getRegisteredGroup('dc:1486792500814413957', { serviceId: 'new-bot' })
         ?.folder,
     ).toBe('derived-team-room');
+  });
+
+  it('allows initial staff assignment for a known counter channel without manual station config', () => {
+    const projectRoot = createProject();
+    storeChatMetadata(
+      'dc:1486792500814413999',
+      new Date().toISOString(),
+      'Counter A',
+      'discord',
+      true,
+    );
+
+    upsertServiceConfig(projectRoot, {
+      assistantName: 'Counter Bot',
+      serviceId: 'counter-bot',
+      agentType: 'claude-code',
+      teamJid: 'dc:1486792500814413999',
+    });
+
+    expect(
+      getRegisteredGroup('dc:1486792500814413999', {
+        serviceId: 'counter-bot',
+      }),
+    ).toMatchObject({
+      name: 'Counter A',
+      serviceId: 'counter-bot',
+      agentType: 'claude-code',
+      requiresTrigger: false,
+    });
+  });
+
+  it('allows initial staff assignment for a manually configured counter before chat discovery', () => {
+    const projectRoot = createProject();
+    upsertOfficeTeam({
+      team_id: 'counter-a',
+      name: 'Counter A',
+      linked_jid: 'dc:1486792500814414888',
+      folder: 'counter-a-room',
+      requires_mention: true,
+      color: '#57d1b7',
+    });
+
+    upsertServiceConfig(projectRoot, {
+      assistantName: 'Counter Bot',
+      serviceId: 'counter-bot',
+      agentType: 'claude-code',
+      teamJid: 'dc:1486792500814414888',
+    });
+
+    expect(
+      getRegisteredGroup('dc:1486792500814414888', {
+        serviceId: 'counter-bot',
+      }),
+    ).toMatchObject({
+      name: 'Counter A',
+      folder: 'counter-a-room',
+      serviceId: 'counter-bot',
+      agentType: 'claude-code',
+    });
+  });
+
+  it('supports mapping one staff member to multiple counters', () => {
+    const projectRoot = createProject();
+    upsertOfficeTeam({
+      team_id: 'counter-a',
+      name: 'Counter A',
+      linked_jid: 'dc:1486792500814414888',
+      folder: 'counter-a-room',
+      requires_mention: false,
+    });
+    upsertOfficeTeam({
+      team_id: 'counter-b',
+      name: 'Counter B',
+      linked_jid: 'dc:1486792500814414999',
+      folder: 'counter-b-room',
+      requires_mention: false,
+    });
+
+    upsertServiceConfig(projectRoot, {
+      assistantName: 'Counter Bot',
+      serviceId: 'counter-bot',
+      agentType: 'claude-code',
+    });
+
+    replaceServiceAssignments(projectRoot, {
+      serviceId: 'counter-bot',
+      jids: ['dc:1486792500814414888', 'dc:1486792500814414999'],
+    });
+
+    expect(
+      getRegisteredGroup('dc:1486792500814414888', {
+        serviceId: 'counter-bot',
+      }),
+    ).toMatchObject({
+      folder: 'counter-a-room',
+      requiresTrigger: false,
+    });
+    expect(
+      getRegisteredGroup('dc:1486792500814414999', {
+        serviceId: 'counter-bot',
+      }),
+    ).toMatchObject({
+      folder: 'counter-b-room',
+      requiresTrigger: false,
+    });
   });
 
   it('moves assigned staff when a linked team channel changes', () => {
@@ -569,7 +848,7 @@ describe('upsertServiceConfig', () => {
     });
 
     expect(() => deleteOfficeTeamConfig(projectRoot, 'ops-team')).toThrow(
-      'Remove assigned or active staff from this team before deleting it',
+      'Remove assigned staff from this team before deleting it',
     );
   });
 

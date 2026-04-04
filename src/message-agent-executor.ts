@@ -45,7 +45,7 @@ import type {
   CodexRotationReason,
 } from './agent-error-detection.js';
 import { getTokenCount } from './token-rotation.js';
-import type { RegisteredGroup } from './types.js';
+import type { AgentType, RegisteredGroup } from './types.js';
 
 export interface MessageAgentExecutorDeps {
   assistantName: string;
@@ -68,8 +68,9 @@ export async function runAgentForGroup(
 ): Promise<'success' | 'error'> {
   const { group, prompt, chatJid, runId, onOutput } = args;
   const isMain = group.isMain === true;
-  const isClaudeCodeAgent =
-    (group.agentType || 'claude-code') === 'claude-code';
+  const agentType = (group.agentType || 'claude-code') as AgentType;
+  const isClaudeCodeAgent = agentType === 'claude-code';
+  const isCodexAgent = agentType === 'codex';
   const sessions = deps.getSessions();
   const sessionId = sessions[group.folder];
   const memoryBriefing = sessionId
@@ -79,7 +80,7 @@ export async function runAgentForGroup(
         groupName: group.name,
       }).catch(() => undefined);
 
-  const tasks = getAllTasks(group.agentType || 'claude-code');
+  const tasks = getAllTasks(agentType);
   writeTasksSnapshot(
     group.folder,
     isMain,
@@ -167,14 +168,16 @@ export async function runAgentForGroup(
             deps.persistSession(group.folder, output.newSessionId);
           }
           const evaluation = evaluateStreamedOutput(output, streamedState, {
-            agentType: isClaudeCodeAgent ? 'claude-code' : 'codex',
+            agentType,
             provider,
             suppressClaudeAuthErrorOutput: provider === 'claude',
             trackSuccessNullResult: true,
             shortCircuitTriggeredErrors:
               provider === 'claude'
                 ? canFallback || canRotateToken
-                : getCodexAccountCount() > 1,
+                : isCodexAgent
+                  ? getCodexAccountCount() > 1
+                  : false,
           });
           streamedState = evaluation.state;
 
@@ -243,11 +246,10 @@ export async function runAgentForGroup(
           runId,
           provider,
         },
-        `Claude provider in cooldown, routing request to ${provider}`,
+        `Primary provider in cooldown, routing request to ${provider}`,
       );
     }
 
-    const agentType = group.agentType || 'claude-code';
     const providerLabel = canFallback ? provider : agentType;
     logger.info(
       {
@@ -577,7 +579,7 @@ export async function runAgentForGroup(
       }
     }
 
-    if (!isClaudeCodeAgent) {
+    if (isCodexAgent) {
       const errMsg = getErrorMessage(primaryAttempt.error);
       const trigger = detectCodexRotationTrigger(errMsg);
       if (trigger.shouldRotate && getCodexAccountCount() > 1) {
@@ -671,7 +673,7 @@ export async function runAgentForGroup(
       }
     }
 
-    if (!isClaudeCodeAgent && getCodexAccountCount() > 1) {
+    if (isCodexAgent && getCodexAccountCount() > 1) {
       const trigger = detectCodexRotationTrigger(output.error);
       if (trigger.shouldRotate) {
         return retryCodexWithRotation(
@@ -694,7 +696,7 @@ export async function runAgentForGroup(
     return 'error';
   }
 
-  if (!isClaudeCodeAgent && primaryAttempt.streamedTriggerReason) {
+  if (isCodexAgent && primaryAttempt.streamedTriggerReason) {
     if (getCodexAccountCount() > 1) {
       return retryCodexWithRotation(
         {
