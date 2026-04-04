@@ -1123,9 +1123,10 @@ function buildChannelAssignments(
   );
   const assignments = getRegisteredGroupAssignments({
     allServices: true,
-  }).filter((assignment) =>
-    isDiscordChat({ jid: assignment.jid, channel: assignment.channel }) &&
-    isValidAdminChannelJid(assignment.jid),
+  }).filter(
+    (assignment) =>
+      isDiscordChat({ jid: assignment.jid, channel: assignment.channel }) &&
+      isValidAdminChannelJid(assignment.jid),
   );
   const chats = getAllChats().filter(
     (chat) => isDiscordChat(chat) && isValidAdminChannelJid(chat.jid),
@@ -1266,7 +1267,8 @@ function deriveChannelCustomerFlow(args: {
   const latestInbound =
     [...recentMessages]
       .reverse()
-      .find((message) => !message.is_bot_message && !message.is_from_me) || null;
+      .find((message) => !message.is_bot_message && !message.is_from_me) ||
+    null;
   const latestOutbound =
     [...recentMessages]
       .reverse()
@@ -1563,61 +1565,56 @@ function buildAdminCounters(args: {
       | 'assignments'
     >,
   ): AdminCounterState => {
-      const configuredTeam = teamByJid.get(channel.jid);
-      const assignedServiceIds = [
-        ...new Set(
-          channel.assignments
-            .filter((assignment) => assignment.kind === 'group')
-            .map((assignment) => assignment.serviceId),
-        ),
-      ];
-      const memberServiceIds =
-        configuredTeam?.memberServiceIds ||
-        [
-          ...new Set([
-            ...assignedServiceIds,
-            ...channel.activeServiceIds,
-          ]),
-        ];
-      const assignmentRequiresMention = [
-        ...new Set(
-          channel.assignments
-            .filter((assignment) => assignment.kind === 'group')
-            .map((assignment) => assignment.requiresTrigger !== false),
-        ),
-      ];
+    const configuredTeam = teamByJid.get(channel.jid);
+    const assignedServiceIds = [
+      ...new Set(
+        channel.assignments
+          .filter((assignment) => assignment.kind === 'group')
+          .map((assignment) => assignment.serviceId),
+      ),
+    ];
+    const memberServiceIds = configuredTeam?.memberServiceIds || [
+      ...new Set([...assignedServiceIds, ...channel.activeServiceIds]),
+    ];
+    const assignmentRequiresMention = [
+      ...new Set(
+        channel.assignments
+          .filter((assignment) => assignment.kind === 'group')
+          .map((assignment) => assignment.requiresTrigger !== false),
+      ),
+    ];
 
-      return {
-        counterId: configuredTeam?.teamId || channel.jid,
-        jid: channel.jid,
-        name: channel.name,
-        stationName: configuredTeam?.name || channel.name,
-        source: configuredTeam?.source || 'channel',
-        teamId: configuredTeam?.teamId || null,
-        folder: configuredTeam?.folder || null,
-        requiresMention:
-          configuredTeam?.requiresMention ??
-          (assignmentRequiresMention.length === 1
-            ? assignmentRequiresMention[0]
-            : true),
-        layoutLeft: configuredTeam?.layoutLeft ?? null,
-        layoutTop: configuredTeam?.layoutTop ?? null,
-        layoutWidth: configuredTeam?.layoutWidth ?? null,
-        layoutHeight: configuredTeam?.layoutHeight ?? null,
-        color: configuredTeam?.color || pickTeamColor(channel.jid),
-        customerFlow: channel.customerFlow,
-        customerSummary: channel.customerSummary,
-        latestInboundAt: channel.latestInboundAt,
-        latestOutboundAt: channel.latestOutboundAt,
-        activeServiceIds: [...channel.activeServiceIds],
-        assignedServiceIds:
-          configuredTeam?.assignedServiceIds || assignedServiceIds,
-        memberServiceIds,
-        openWorkItemCount: channel.openWorkItemCount,
-        assignmentCount: channel.assignments.length,
-        assignments: [...channel.assignments],
-      };
+    return {
+      counterId: configuredTeam?.teamId || channel.jid,
+      jid: channel.jid,
+      name: channel.name,
+      stationName: configuredTeam?.name || channel.name,
+      source: configuredTeam?.source || 'channel',
+      teamId: configuredTeam?.teamId || null,
+      folder: configuredTeam?.folder || null,
+      requiresMention:
+        configuredTeam?.requiresMention ??
+        (assignmentRequiresMention.length === 1
+          ? assignmentRequiresMention[0]
+          : true),
+      layoutLeft: configuredTeam?.layoutLeft ?? null,
+      layoutTop: configuredTeam?.layoutTop ?? null,
+      layoutWidth: configuredTeam?.layoutWidth ?? null,
+      layoutHeight: configuredTeam?.layoutHeight ?? null,
+      color: configuredTeam?.color || pickTeamColor(channel.jid),
+      customerFlow: channel.customerFlow,
+      customerSummary: channel.customerSummary,
+      latestInboundAt: channel.latestInboundAt,
+      latestOutboundAt: channel.latestOutboundAt,
+      activeServiceIds: [...channel.activeServiceIds],
+      assignedServiceIds:
+        configuredTeam?.assignedServiceIds || assignedServiceIds,
+      memberServiceIds,
+      openWorkItemCount: channel.openWorkItemCount,
+      assignmentCount: channel.assignments.length,
+      assignments: [...channel.assignments],
     };
+  };
 
   for (const channel of args.channels) {
     counters.set(channel.jid, buildCounter(channel));
@@ -1643,27 +1640,27 @@ function buildAdminCounters(args: {
   }
 
   return [...counters.values()].sort((a, b) => {
-      const activityWeight = (counter: AdminCounterState): number =>
-        counter.customerFlow === 'handoff-ready'
-          ? 0
-          : counter.customerFlow === 'cooking'
-            ? 1
-            : counter.customerFlow === 'order-taking'
-              ? 2
-              : counter.customerFlow === 'customer-arrived'
-                ? 3
-                : counter.customerFlow === 'served'
-                  ? 4
-                  : 5;
-      const weightDiff = activityWeight(a) - activityWeight(b);
-      if (weightDiff !== 0) return weightDiff;
-      const timeA = a.latestInboundAt ?? a.latestOutboundAt;
-      const timeB = b.latestInboundAt ?? b.latestOutboundAt;
-      const timestampA = timeA ? new Date(timeA).getTime() : 0;
-      const timestampB = timeB ? new Date(timeB).getTime() : 0;
-      if (timestampA !== timestampB) return timestampB - timestampA;
-      return a.stationName.localeCompare(b.stationName);
-    });
+    const activityWeight = (counter: AdminCounterState): number =>
+      counter.customerFlow === 'handoff-ready'
+        ? 0
+        : counter.customerFlow === 'cooking'
+          ? 1
+          : counter.customerFlow === 'order-taking'
+            ? 2
+            : counter.customerFlow === 'customer-arrived'
+              ? 3
+              : counter.customerFlow === 'served'
+                ? 4
+                : 5;
+    const weightDiff = activityWeight(a) - activityWeight(b);
+    if (weightDiff !== 0) return weightDiff;
+    const timeA = a.latestInboundAt ?? a.latestOutboundAt;
+    const timeB = b.latestInboundAt ?? b.latestOutboundAt;
+    const timestampA = timeA ? new Date(timeA).getTime() : 0;
+    const timestampB = timeB ? new Date(timeB).getTime() : 0;
+    if (timestampA !== timestampB) return timestampB - timestampA;
+    return a.stationName.localeCompare(b.stationName);
+  });
 }
 
 export function readAdminState(projectRoot: string): AdminState {
@@ -2949,10 +2946,7 @@ export function upsertServiceConfig(
       : null;
   const localLlmApiKey =
     agentType === 'local-llm'
-      ? normalizeSecretEnvValue(
-          input.localLlmApiKey,
-          input.clearLocalLlmApiKey,
-        )
+      ? normalizeSecretEnvValue(input.localLlmApiKey, input.clearLocalLlmApiKey)
       : null;
 
   upsertEnvFile(targetPath, {
@@ -3302,16 +3296,16 @@ export function replaceServiceAssignments(
   );
   for (const jid of desiredJids) {
     if (!knownCounterJids.has(jid)) {
-      throw new InvalidAdminInputError(
-        `Unknown order counter: ${jid}`,
-      );
+      throw new InvalidAdminInputError(`Unknown order counter: ${jid}`);
     }
   }
 
   const existingAssignments = getRegisteredGroupAssignments({
     serviceId: service.serviceId,
   });
-  const existingJids = new Set(existingAssignments.map((assignment) => assignment.jid));
+  const existingJids = new Set(
+    existingAssignments.map((assignment) => assignment.jid),
+  );
   let changed = false;
 
   for (const assignment of existingAssignments) {

@@ -71,7 +71,8 @@ export function buildEffectiveServiceEnv(
   service: DiscoveredService,
   baseEnvOverride?: Record<string, string>,
 ): Record<string, string> {
-  const baseEnv = baseEnvOverride || parseEnvFilePath(path.join(projectRoot, '.env'));
+  const baseEnv =
+    baseEnvOverride || parseEnvFilePath(path.join(projectRoot, '.env'));
   const overlayEnv = service.envOverlayPath
     ? parseEnvFilePath(service.envOverlayPath)
     : {};
@@ -87,11 +88,14 @@ export function summarizeServiceHealthConfig(
   effectiveEnv: Record<string, string>,
 ): ServiceHealthConfigSummary {
   return {
-    statusChannelId: parseDiscordChannelId(effectiveEnv.STATUS_CHANNEL_ID) || '',
+    statusChannelId:
+      parseDiscordChannelId(effectiveEnv.STATUS_CHANNEL_ID) || '',
     botTokenConfigured: Boolean(effectiveEnv.DISCORD_BOT_TOKEN),
     anthropicApiKeyConfigured: Boolean(effectiveEnv.ANTHROPIC_API_KEY),
     anthropicAuthTokenConfigured: Boolean(effectiveEnv.ANTHROPIC_AUTH_TOKEN),
-    claudeCodeOauthTokenConfigured: Boolean(effectiveEnv.CLAUDE_CODE_OAUTH_TOKEN),
+    claudeCodeOauthTokenConfigured: Boolean(
+      effectiveEnv.CLAUDE_CODE_OAUTH_TOKEN,
+    ),
     claudeCodeOauthTokensConfigured: Boolean(
       effectiveEnv.CLAUDE_CODE_OAUTH_TOKENS,
     ),
@@ -228,7 +232,8 @@ export function diagnoseServiceHealth(input: {
     diagnostics.push({
       level: 'warning',
       code: 'stale-snapshot',
-      message: 'Runtime is up, but the latest activity snapshot is stale or missing.',
+      message:
+        'Runtime is up, but the latest activity snapshot is stale or missing.',
     });
   }
 

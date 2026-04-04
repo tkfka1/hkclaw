@@ -79,7 +79,11 @@ describe('admin web auth helpers', () => {
   });
 
   it('renders the primary admin pages', () => {
-    const pages = [renderLoginPage(), renderSetupRequiredPage(), renderAdminPage()];
+    const pages = [
+      renderLoginPage(),
+      renderSetupRequiredPage(),
+      renderAdminPage(),
+    ];
 
     for (const html of pages) {
       expect(html).toContain('href="/favicon.ico"');
@@ -107,8 +111,8 @@ describe('admin web auth helpers', () => {
     expect(adminGamePage).toContain("id: 'team-management'");
     expect(adminGamePage).toContain("id: 'hiring'");
     expect(adminGamePage).toContain("id: 'employees'");
-    expect(adminGamePage).toContain("data-origin-block=\"gemini-cli\"");
-    expect(adminGamePage).toContain("data-origin-block=\"local-llm\"");
+    expect(adminGamePage).toContain('data-origin-block="gemini-cli"');
+    expect(adminGamePage).toContain('data-origin-block="local-llm"');
     expect(adminGamePage).toContain('function buildCounterLayouts');
     expect(adminGamePage).toContain('function boot()');
     expect(adminGamePage).toContain('this.cameras.main');

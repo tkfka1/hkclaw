@@ -11,11 +11,7 @@ export interface AgentConfig {
   localLlmModel?: string;
 }
 
-export type AgentType =
-  | 'claude-code'
-  | 'codex'
-  | 'gemini-cli'
-  | 'local-llm';
+export type AgentType = 'claude-code' | 'codex' | 'gemini-cli' | 'local-llm';
 export type ServiceRole = 'dashboard' | 'normal';
 
 /** Phase of agent output as emitted by the runner. */

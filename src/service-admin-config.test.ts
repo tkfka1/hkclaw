@@ -499,7 +499,13 @@ describe('upsertServiceConfig', () => {
   it('builds counter state by merging channel flow with station config', () => {
     const projectRoot = createProject();
     const now = new Date().toISOString();
-    storeChatMetadata('dc:1486792500814413957', now, 'Drive Thru', 'discord', true);
+    storeChatMetadata(
+      'dc:1486792500814413957',
+      now,
+      'Drive Thru',
+      'discord',
+      true,
+    );
     upsertOfficeTeamConfig(projectRoot, {
       name: 'Drive Thru Station',
       linkedJid: 'dc:1486792500814413957',
@@ -602,10 +608,11 @@ describe('upsertServiceConfig', () => {
     expect(
       state.channels.find((entry) => entry.jid === 'dc:14867924710'),
     ).toBeUndefined();
-    expect(state.teams.find((entry) => entry.teamId === 'broken-any'))
-      .toMatchObject({
-        linkedJid: null,
-      });
+    expect(
+      state.teams.find((entry) => entry.teamId === 'broken-any'),
+    ).toMatchObject({
+      linkedJid: null,
+    });
   });
 
   it('does not create default store zones in the layout', () => {
